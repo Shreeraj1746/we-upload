@@ -23,6 +23,25 @@ repos:
       - id: terraform_validate
       - id: terraform_docs
 
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.7.0
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: mypy
+        language: python
+        types: [python]
+        require_serial: true
+        additional_dependencies: [
+          "types-python-jose",
+          "types-passlib",
+          "types-boto3",
+          "types-requests",
+          "types-pyyaml",
+          "types-toml",
+        ]
+        args: ["--config-file", "mypy.ini"]
+
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v3.10.0
     hooks:
