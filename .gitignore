@@ -42,6 +42,9 @@ override.tf.json
 terraform.tfvars.json
 .terraformrc
 terraform.rc
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate.backup
 
 # IDEs and editors
 .idea/

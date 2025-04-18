@@ -14,8 +14,12 @@
   - EC2 for API deployment (t2.micro for free tier)
   - RDS PostgreSQL for database (db.t3.micro for free tier)
 - CI with GitHub Actions:
-  - Simple CI workflow for linting and testing
-- Pre-commit hooks configured for code quality enforcement
+  - Comprehensive CI workflow with linting, testing, and Docker build stages
+  - Terraform validation integrated in CI pipeline
+- Pre-commit hooks configured for code quality enforcement:
+  - Python linting with Ruff
+  - Terraform formatting, validation, and documentation
+  - Git commit message validation
 - System architecture diagram added to implementation plan document
 - Project structure reorganized:
   - Moved Dockerfile and pyproject.toml to top level
@@ -29,7 +33,7 @@
   - Added appropriate rule exceptions for FastAPI-specific patterns
   - Fixed docstring format issues
   - Fixed class method parameter name issues
-  - Removed Terraform hooks from pre-commit config to focus on Python code
+  - Restored Terraform checks to ensure infrastructure quality
 - Development setup improved:
   - Added comprehensive development guide (docs/development.md)
   - Enhanced error handling with virtual environment checks
@@ -54,7 +58,7 @@
 - Pre-commit hooks installation and configuration
 - System architecture diagram creation and documentation
 - Project restructuring to adhere to standard Python package format
-- GitHub Actions CI pipeline simplification
+- GitHub Actions CI pipeline improvements
 - Linting configuration improvements
 - Basic type checking fixes
 - Development environment documentation

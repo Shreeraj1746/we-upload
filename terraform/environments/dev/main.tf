@@ -35,12 +35,12 @@ data "aws_availability_zones" "available" {
 module "vpc" {
   source = "../../modules/vpc"
 
-  name                      = local.name
-  vpc_cidr_block            = var.vpc_cidr_block
-  availability_zones        = [data.aws_availability_zones.available.names[0], data.aws_availability_zones.available.names[1]]
-  public_subnet_cidr_blocks = var.public_subnet_cidr_blocks
+  name                       = local.name
+  vpc_cidr_block             = var.vpc_cidr_block
+  availability_zones         = [data.aws_availability_zones.available.names[0], data.aws_availability_zones.available.names[1]]
+  public_subnet_cidr_blocks  = var.public_subnet_cidr_blocks
   private_subnet_cidr_blocks = var.private_subnet_cidr_blocks
-  enable_nat_gateway        = var.environment == "prod"  # Use NAT gateway only in production
+  enable_nat_gateway         = var.environment == "prod" # Use NAT gateway only in production
 
   tags = local.tags
 }
@@ -49,7 +49,7 @@ module "vpc" {
 module "s3" {
   source = "../../modules/s3"
 
-  bucket_name = "we-upload-files-${var.environment}-${random_id.bucket_suffix.hex}"
+  bucket_name          = "we-upload-files-${var.environment}-${random_id.bucket_suffix.hex}"
   cors_allowed_origins = var.cors_allowed_origins
 
   tags = local.tags
