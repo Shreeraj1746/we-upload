@@ -18,6 +18,11 @@
   - CD workflow for deploying to AWS
 - Pre-commit hooks fixed and properly installed for code quality enforcement
 - System architecture diagram added to implementation plan document
+- Project structure reorganized:
+  - Moved Dockerfile and pyproject.toml to top level
+  - Updated CI/CD workflows to use the correct paths
+  - Updated docker-compose.yml to reflect the new structure
+  - Updated README.md with the correct directory structure
 
 ## Next Steps
 - Add unit and integration tests
@@ -37,6 +42,7 @@
 - GitHub Actions workflows
 - Pre-commit hooks installation and configuration
 - System architecture diagram creation and documentation
+- Project restructuring to adhere to standard Python package format
 
 ## Issues
 None yet

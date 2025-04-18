@@ -14,18 +14,15 @@ A robust, scalable backend system for file uploading and sharing, built with Fas
 
 ```
 .
-├── api/                    # FastAPI application code
-│   ├── app/                # Application package
-│   │   ├── core/           # Core components (config, security)
-│   │   ├── db/             # Database models and connection
-│   │   ├── dependencies/   # FastAPI dependencies
-│   │   ├── models/         # SQLAlchemy models
-│   │   ├── routers/        # API endpoints
-│   │   ├── schemas/        # Pydantic schemas
-│   │   ├── services/       # Business logic
-│   │   └── utils/          # Utilities
-│   ├── Dockerfile          # Docker configuration for API
-│   └── tests/              # API tests
+├── app/                    # FastAPI application code
+│   ├── core/               # Core components (config, security)
+│   ├── db/                 # Database models and connection
+│   ├── dependencies/       # FastAPI dependencies
+│   ├── models/             # SQLAlchemy models
+│   ├── routers/            # API endpoints
+│   ├── schemas/            # Pydantic schemas
+│   ├── services/           # Business logic
+│   └── utils/              # Utilities
 ├── terraform/              # Infrastructure as Code
 │   ├── environments/       # Environment-specific configs
 │   │   ├── dev/            # Development environment
@@ -41,9 +38,12 @@ A robust, scalable backend system for file uploading and sharing, built with Fas
 │       └── vpc/            # VPC, Subnets, Routes
 ├── .github/                # GitHub configuration
 │   └── workflows/          # GitHub Actions workflows
+├── docs/                   # Documentation
+│   └── implementation_plan.md  # Step-by-step guide
+├── tests/                  # API tests
 ├── docker-compose.yml      # Local development setup
-└── docs/                   # Documentation
-    └── implementation_plan.md  # Step-by-step guide
+├── Dockerfile              # Docker configuration for API
+└── pyproject.toml          # Python project configuration
 ```
 
 ## Local Development
