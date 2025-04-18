@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/app
+    environment:
+      - WE_UPLOAD_DEBUG=true
+      - WE_UPLOAD_POSTGRES_SERVER=db
+      - WE_UPLOAD_POSTGRES_USER=postgres
+      - WE_UPLOAD_POSTGRES_PASSWORD=postgres
+      - WE_UPLOAD_POSTGRES_DB=we_upload
+      - WE_UPLOAD_SECRET_KEY=supersecretkey
+      - WE_UPLOAD_FIRST_SUPERUSER=admin@example.com
+      - WE_UPLOAD_FIRST_SUPERUSER_PASSWORD=admin
+      - WE_UPLOAD_S3_BUCKET_NAME=we-upload-local
+      - WE_UPLOAD_AWS_REGION=us-east-1
+      - WE_UPLOAD_AWS_ACCESS_KEY_ID=minio
+      - WE_UPLOAD_AWS_SECRET_ACCESS_KEY=minio123
+    depends_on:
+      - db
+      - minio
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  db:
+    image: postgres:13-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=we_upload
+
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      - MINIO_ROOT_USER=minio
+      - MINIO_ROOT_PASSWORD=minio123
+    command: server /data --console-address ":9001"
+
+  minio-init:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      /usr/bin/mc config host add myminio http://minio:9000 minio minio123;
+      /usr/bin/mc mb myminio/we-upload-local;
+      /usr/bin/mc policy set public myminio/we-upload-local;
+      exit 0;
+      "
+
+volumes:
+  postgres_data:
+  minio_data:
