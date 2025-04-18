@@ -7,7 +7,7 @@ name = "we-upload"
 version = "0.1.0"
 description = "Multi-User File Upload & Sharing Backend with FastAPI"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.13"
 license = {text = "MIT"}
 authors = [
     {name = "We-Upload Team"}
@@ -43,7 +43,7 @@ dev = [
 packages = ["app"]
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py312"
 line-length = 100
 
 [tool.ruff.lint]
@@ -75,7 +75,6 @@ ignore = [
     "E501",   # Line too long
     "EM101",  # String literal in exception
     "EM102",  # f-string in exception
-    "FA100",  # Missing from __future__ import annotations
     "G004",   # Logging with f-string
     "PGH003", # Use specific rule codes for ignoring type issues
     "PGH004", # Use specific rule codes when using noqa
@@ -87,8 +86,10 @@ ignore = [
     "TRY200", # Use raise from
     "TRY300", # Consider moving to else block
     "TRY400", # Use logging.exception
-    "UP007",  # Use X | Y for Union types in Python 3.10+
-    "UP038",  # Use X | Y in isinstance
+    # No longer needed with Python 3.13
+    # "UP007",  # Use X | Y for Union types in Python 3.10+
+    # "UP038",  # Use X | Y in isinstance
+    # "FA100",  # Missing from __future__ import annotations
     # Formatter conflict rules
     "COM812", # Missing trailing comma
     "ISC001", # Implicit string concatenation
@@ -122,7 +123,7 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.13"
 warn_return_any = false  # Temporarily disable any-return warnings
 warn_unused_configs = true
 disallow_untyped_defs = true

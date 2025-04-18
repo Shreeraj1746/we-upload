@@ -37,9 +37,11 @@
   - Restored Terraform checks to ensure infrastructure quality
   - Temporarily disabled strict linting rules for gradual code cleanup
   - Added exceptions for Python 3.9 typing compatibility (FA100)
+  - Updated to target Python 3.13
 - Development setup improved:
   - Added comprehensive development guide (docs/development.md)
   - Enhanced error handling with virtual environment checks
+  - Upgraded project to use Python 3.13
 
 ## Next Steps
 - Add unit and integration tests
@@ -49,6 +51,7 @@
 - Create a simple frontend application
 - Fix remaining type checking and linting issues
 - Gradually address linting issues that were temporarily disabled
+- Update type annotations to use Python 3.13's improved syntax
 
 ## Completed Items
 - Project structure creation
