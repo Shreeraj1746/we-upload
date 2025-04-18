@@ -1,7 +1,7 @@
 """Security utilities for the API application."""
 
 from datetime import datetime, timedelta
-from typing import Any, Optional, Union
+from typing import Any
 
 from jose import jwt
 from passlib.context import CryptContext
@@ -15,7 +15,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 ALGORITHM = "HS256"
 
 
-def create_access_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(subject: str | Any, expires_delta: timedelta | None = None) -> str:
     """Create a JWT access token.
 
     Args:

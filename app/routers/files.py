@@ -40,7 +40,7 @@ def create_upload_url(
     try:
         return file_service.create_upload_url(file_info=file_info, user=current_user)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate upload URL: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate upload URL: {e!s}")
 
 
 @router.get("/download/{file_id}", response_model=FileDownloadResponse)
@@ -73,7 +73,7 @@ def create_download_url(
     except PermissionError:
         raise HTTPException(status_code=403, detail="Not enough permissions to access this file")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate download URL: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate download URL: {e!s}")
 
 
 @router.get("", response_model=list[File])
@@ -190,4 +190,4 @@ def delete_file(
         file = file_service.remove(id=file_id)
         return file
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete file: {e!s}")

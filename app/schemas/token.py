@@ -1,7 +1,5 @@
 """Token Pydantic schemas."""
 
-from typing import Optional
-
 from pydantic import BaseModel
 
 
@@ -25,5 +23,5 @@ class TokenPayload(BaseModel):
         exp: Expiration time of the token.
     """
 
-    sub: Optional[str] = None
-    exp: Optional[int] = None
+    sub: str | None = None
+    exp: int | None = None

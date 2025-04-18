@@ -1,7 +1,7 @@
 """User service for user operations."""
 
 import uuid
-from typing import Any, Optional, Union
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -25,7 +25,7 @@ class UserService:
         """
         self.db = db
 
-    def get(self, id: str) -> Optional[User]:
+    def get(self, id: str) -> User | None:
         """Get a user by ID.
 
         Args:
@@ -36,7 +36,7 @@ class UserService:
         """
         return self.db.query(User).filter(User.id == id).first()
 
-    def get_by_email(self, email: str) -> Optional[User]:
+    def get_by_email(self, email: str) -> User | None:
         """Get a user by email.
 
         Args:
@@ -80,7 +80,7 @@ class UserService:
         self.db.refresh(db_obj)
         return db_obj
 
-    def update(self, db_obj: User, obj_in: Union[UserUpdate, dict[str, Any]]) -> User:
+    def update(self, db_obj: User, obj_in: UserUpdate | dict[str, Any]) -> User:
         """Update a user.
 
         Args:
@@ -109,7 +109,7 @@ class UserService:
         self.db.refresh(db_obj)
         return db_obj
 
-    def remove(self, id: str) -> Optional[User]:
+    def remove(self, id: str) -> User | None:
         """Remove a user.
 
         Args:
@@ -125,7 +125,7 @@ class UserService:
         self.db.commit()
         return user
 
-    def authenticate(self, email: str, password: str) -> Optional[User]:
+    def authenticate(self, email: str, password: str) -> User | None:
         """Authenticate a user.
 
         Args:

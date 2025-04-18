@@ -1,7 +1,6 @@
 """File Pydantic schemas."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import UUID4, BaseModel
 
@@ -21,7 +20,7 @@ class FileBase(BaseModel):
     filename: str
     content_type: str
     size_bytes: int
-    description: Optional[str] = None
+    description: str | None = None
     is_public: bool = False
 
 
@@ -31,8 +30,6 @@ class FileCreate(FileBase):
 
     This schema is used when uploading file metadata.
     """
-
-    pass
 
 
 # Properties to receive via API on update
@@ -47,9 +44,9 @@ class FileUpdate(BaseModel):
         is_public: Whether the file is publicly accessible (optional).
     """
 
-    filename: Optional[str] = None
-    description: Optional[str] = None
-    is_public: Optional[bool] = None
+    filename: str | None = None
+    description: str | None = None
+    is_public: bool | None = None
 
 
 # Properties shared by models stored in DB
@@ -79,8 +76,6 @@ class FileInDBBase(FileBase):
 # Properties to return via API
 class File(FileInDBBase):
     """Schema for file data returned via API."""
-
-    pass
 
 
 # Additional schemas
