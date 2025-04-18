@@ -52,7 +52,7 @@ class Settings(BaseSettings):
 
     @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
     @classmethod
-    def assemble_db_connection(cls, v: str | None, values: dict[str, Any]) -> PostgresDsn | None:
+    def assemble_db_connection(cls, v: str | None, values: dict[str, Any]) -> Any:
         """Assemble the database connection URI.
 
         Args:
@@ -63,7 +63,7 @@ class Settings(BaseSettings):
             Assembled PostgreSQL database URI.
         """
         if isinstance(v, str):
-            return v
+            return v  # type: ignore
         try:
             return PostgresDsn.build(
                 scheme="postgresql",
