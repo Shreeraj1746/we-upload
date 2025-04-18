@@ -3,7 +3,7 @@
 from collections.abc import Generator
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
 
@@ -19,7 +19,7 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-def get_db() -> Generator[sessionmaker, None, None]:
+def get_db() -> Generator[Session, None, None]:
     """Get a database session.
 
     This function is used as a dependency in FastAPI endpoints.
