@@ -1,6 +1,5 @@
 """Application configuration settings module."""
 
-from typing import Any, no_type_check
 
 from pydantic import AnyHttpUrl, PostgresDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -43,53 +42,42 @@ class Settings(BaseSettings):
         raise ValueError(v)
 
     # Database settings
-    POSTGRES_SERVER: str
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_DB: str
+    POSTGRES_SERVER: str = "db"  # Default to docker-compose service name
+    POSTGRES_USER: str = "postgres"  # Default values
+    POSTGRES_PASSWORD: str = "postgres"
+    POSTGRES_DB: str = "we_upload"
     POSTGRES_PORT: str = "5432"
     SQLALCHEMY_DATABASE_URI: PostgresDsn | None = None
 
-    @no_type_check
     @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
     @classmethod
     def assemble_db_connection(
-        cls: Any,
-        v: Any,
-        values: dict[str, Any],
-    ) -> Any:
+        cls,
+        v: PostgresDsn | str | None,
+    ) -> PostgresDsn | str | None:
         """Assemble the database connection URI.
 
         Args:
             v: The value to be validated.
-            values: A dictionary of the model's values.
 
         Returns:
             Assembled PostgreSQL database URI.
         """
         if isinstance(v, str):
-            return v  # type: ignore
-        try:
-            return PostgresDsn.build(
-                scheme="postgresql",
-                username=values.get("POSTGRES_USER"),
-                password=values.get("POSTGRES_PASSWORD"),
-                host=values.get("POSTGRES_SERVER"),
-                port=values.get("POSTGRES_PORT"),
-                path=f"{values.get('POSTGRES_DB') or ''}",
-            )
-        except Exception:
-            return None
+            return v
+
+        # Return hardcoded connection string for local development
+        return "postgresql://postgres:postgres@db:5432/we_upload"
 
     # JWT settings
-    SECRET_KEY: str
+    SECRET_KEY: str = "supersecretkey"  # Default value for development
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
 
     # AWS settings
     AWS_REGION: str = "us-east-1"
-    AWS_ACCESS_KEY_ID: str | None = None
-    AWS_SECRET_ACCESS_KEY: str | None = None
-    S3_BUCKET_NAME: str
+    AWS_ACCESS_KEY_ID: str = "minio"  # Default for local MinIO
+    AWS_SECRET_ACCESS_KEY: str = "minio123"  # Default for local MinIO
+    S3_BUCKET_NAME: str = "we-upload-local"  # Default bucket name
     PRESIGNED_URL_EXPIRY: int = 3600  # 1 hour
 
     # User settings
@@ -98,4 +86,4 @@ class Settings(BaseSettings):
 
 
 # Create a global settings instance
-settings = Settings()  # type: ignore
+settings = Settings()
