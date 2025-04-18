@@ -1,16 +1,14 @@
 """User Pydantic schemas."""
 
-import uuid
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field, UUID4, field_validator
+from pydantic import UUID4, BaseModel, EmailStr
 
 
 # Shared properties
 class UserBase(BaseModel):
-    """
-    Base User schema with common attributes.
+    """Base User schema with common attributes.
 
     Attributes:
         email: User's email address.
@@ -27,8 +25,7 @@ class UserBase(BaseModel):
 
 # Properties to receive via API on creation
 class UserCreate(UserBase):
-    """
-    Schema for creating a new user.
+    """Schema for creating a new user.
 
     Attributes:
         password: User's password.
@@ -39,8 +36,7 @@ class UserCreate(UserBase):
 
 # Properties to receive via API on update
 class UserUpdate(UserBase):
-    """
-    Schema for updating a user.
+    """Schema for updating a user.
 
     All fields are optional to allow partial updates.
 
@@ -54,8 +50,7 @@ class UserUpdate(UserBase):
 
 # Properties shared by models stored in DB
 class UserInDBBase(UserBase):
-    """
-    Base schema for user stored in database.
+    """Base schema for user stored in database.
 
     Attributes:
         id: Unique identifier for the user.
@@ -82,8 +77,7 @@ class User(UserInDBBase):
 
 # Properties stored in DB
 class UserInDB(UserInDBBase):
-    """
-    Schema for user stored in database, including hashed password.
+    """Schema for user stored in database, including hashed password.
 
     Attributes:
         hashed_password: Hashed password for the user.

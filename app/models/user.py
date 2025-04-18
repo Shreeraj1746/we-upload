@@ -1,7 +1,6 @@
 """User database model."""
 
-from datetime import datetime
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, String
 from sqlalchemy.orm import relationship
@@ -14,8 +13,7 @@ if TYPE_CHECKING:
 
 
 class User(Base):
-    """
-    User model for storing user information.
+    """User model for storing user information.
 
     Attributes:
         id: Unique identifier for the user.

@@ -1,22 +1,20 @@
 """File service for file operations."""
 
 import uuid
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 import boto3
 from botocore.exceptions import ClientError
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.models.file import File
 from app.models.user import User
-from app.schemas.file import FileCreate, FileUpdate, FileUploadResponse, FileDownloadResponse
+from app.schemas.file import FileCreate, FileDownloadResponse, FileUpdate, FileUploadResponse
 
 
 class FileService:
-    """
-    Service for file operations.
+    """Service for file operations.
 
     This service handles file metadata CRUD operations and generates
     presigned URLs for direct file upload/download to/from S3.
@@ -27,23 +25,21 @@ class FileService:
     """
 
     def __init__(self, db: Session):
-        """
-        Initialize the file service.
+        """Initialize the file service.
 
         Args:
             db: Database session.
         """
         self.db = db
         self.s3_client = boto3.client(
-            's3',
+            "s3",
             region_name=settings.AWS_REGION,
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         )
 
     def get(self, id: uuid.UUID) -> Optional[File]:
-        """
-        Get a file by ID.
+        """Get a file by ID.
 
         Args:
             id: File ID.
@@ -53,9 +49,8 @@ class FileService:
         """
         return self.db.query(File).filter(File.id == id).first()
 
-    def get_multi(self, skip: int = 0, limit: int = 100) -> List[File]:
-        """
-        Get multiple files.
+    def get_multi(self, skip: int = 0, limit: int = 100) -> list[File]:
+        """Get multiple files.
 
         Args:
             skip: Number of records to skip.
@@ -68,9 +63,8 @@ class FileService:
 
     def get_multi_by_owner(
         self, owner_id: uuid.UUID, skip: int = 0, limit: int = 100
-    ) -> List[File]:
-        """
-        Get multiple files by owner.
+    ) -> list[File]:
+        """Get multiple files by owner.
 
         Args:
             owner_id: Owner's ID.
@@ -80,17 +74,10 @@ class FileService:
         Returns:
             A list of files owned by the specified user.
         """
-        return (
-            self.db.query(File)
-            .filter(File.owner_id == owner_id)
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
+        return self.db.query(File).filter(File.owner_id == owner_id).offset(skip).limit(limit).all()
 
     def create(self, obj_in: FileCreate, owner_id: uuid.UUID) -> File:
-        """
-        Create a new file metadata record.
+        """Create a new file metadata record.
 
         Args:
             obj_in: File creation data.
@@ -117,9 +104,8 @@ class FileService:
         self.db.refresh(db_obj)
         return db_obj
 
-    def update(self, db_obj: File, obj_in: Union[FileUpdate, Dict[str, Any]]) -> File:
-        """
-        Update a file's metadata.
+    def update(self, db_obj: File, obj_in: Union[FileUpdate, dict[str, Any]]) -> File:
+        """Update a file's metadata.
 
         Args:
             db_obj: Existing file object from the database.
@@ -143,8 +129,7 @@ class FileService:
         return db_obj
 
     def remove(self, id: uuid.UUID) -> Optional[File]:
-        """
-        Remove a file.
+        """Remove a file.
 
         This removes both the file metadata from the database and
         the actual file from S3.
@@ -178,8 +163,7 @@ class FileService:
         return file_obj
 
     def create_upload_url(self, file_info: FileCreate, user: User) -> FileUploadResponse:
-        """
-        Create a presigned URL for file upload and register the file metadata.
+        """Create a presigned URL for file upload and register the file metadata.
 
         Args:
             file_info: Information about the file to be uploaded.
@@ -197,11 +181,11 @@ class FileService:
         # Generate presigned URL for upload
         try:
             upload_url = self.s3_client.generate_presigned_url(
-                'put_object',
+                "put_object",
                 Params={
-                    'Bucket': settings.S3_BUCKET_NAME,
-                    'Key': file_obj.s3_key,
-                    'ContentType': file_info.content_type,
+                    "Bucket": settings.S3_BUCKET_NAME,
+                    "Key": file_obj.s3_key,
+                    "ContentType": file_info.content_type,
                 },
                 ExpiresIn=settings.PRESIGNED_URL_EXPIRY,
             )
@@ -216,8 +200,7 @@ class FileService:
             raise Exception(f"Error generating presigned URL: {e}")
 
     def create_download_url(self, file_id: uuid.UUID, user: User) -> FileDownloadResponse:
-        """
-        Create a presigned URL for file download.
+        """Create a presigned URL for file download.
 
         Args:
             file_id: ID of the file to download.
@@ -243,10 +226,10 @@ class FileService:
         # Generate presigned URL for download
         try:
             download_url = self.s3_client.generate_presigned_url(
-                'get_object',
+                "get_object",
                 Params={
-                    'Bucket': settings.S3_BUCKET_NAME,
-                    'Key': file_obj.s3_key,
+                    "Bucket": settings.S3_BUCKET_NAME,
+                    "Key": file_obj.s3_key,
                 },
                 ExpiresIn=settings.PRESIGNED_URL_EXPIRY,
             )

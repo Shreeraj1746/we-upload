@@ -1,16 +1,14 @@
 """File Pydantic schemas."""
 
-import uuid
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, UUID4, Field
+from pydantic import UUID4, BaseModel
 
 
 # Shared properties
 class FileBase(BaseModel):
-    """
-    Base File schema with common attributes.
+    """Base File schema with common attributes.
 
     Attributes:
         filename: Original filename.
@@ -29,8 +27,7 @@ class FileBase(BaseModel):
 
 # Properties to receive via API on creation
 class FileCreate(FileBase):
-    """
-    Schema for creating a new file.
+    """Schema for creating a new file.
 
     This schema is used when uploading file metadata.
     """
@@ -40,8 +37,7 @@ class FileCreate(FileBase):
 
 # Properties to receive via API on update
 class FileUpdate(BaseModel):
-    """
-    Schema for updating a file.
+    """Schema for updating a file.
 
     All fields are optional to allow partial updates.
 
@@ -58,8 +54,7 @@ class FileUpdate(BaseModel):
 
 # Properties shared by models stored in DB
 class FileInDBBase(FileBase):
-    """
-    Base schema for file stored in database.
+    """Base schema for file stored in database.
 
     Attributes:
         id: Unique identifier for the file.
@@ -90,8 +85,7 @@ class File(FileInDBBase):
 
 # Additional schemas
 class FileUploadResponse(BaseModel):
-    """
-    Schema for the response from a file upload request.
+    """Schema for the response from a file upload request.
 
     Attributes:
         upload_url: Presigned URL for uploading the file to S3.
@@ -103,8 +97,7 @@ class FileUploadResponse(BaseModel):
 
 
 class FileDownloadResponse(BaseModel):
-    """
-    Schema for the response from a file download request.
+    """Schema for the response from a file download request.
 
     Attributes:
         download_url: Presigned URL for downloading the file from S3.

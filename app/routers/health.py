@@ -10,8 +10,7 @@ router = APIRouter()
 
 @router.get("/health")
 def health_check() -> dict:
-    """
-    Health check endpoint.
+    """Health check endpoint.
 
     This endpoint is used to check if the API is running.
 
@@ -23,8 +22,7 @@ def health_check() -> dict:
 
 @router.get("/health/db")
 def db_health_check(db: Session = Depends(get_db)) -> dict:
-    """
-    Database health check endpoint.
+    """Database health check endpoint.
 
     This endpoint checks if the database connection is working.
 

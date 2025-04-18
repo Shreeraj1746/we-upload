@@ -37,3 +37,4 @@ repos:
           - types-requests
           - pydantic
         exclude: ^(terraform/|alembic/)
+        stages: [manual]

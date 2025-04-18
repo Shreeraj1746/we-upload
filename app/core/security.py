@@ -1,7 +1,7 @@
 """Security utilities for the API application."""
 
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 from jose import jwt
 from passlib.context import CryptContext
@@ -15,11 +15,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 ALGORITHM = "HS256"
 
 
-def create_access_token(
-    subject: Union[str, Any], expires_delta: Optional[timedelta] = None
-) -> str:
-    """
-    Create a JWT access token.
+def create_access_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+    """Create a JWT access token.
 
     Args:
         subject: The subject of the token, typically a user ID.
@@ -34,14 +31,13 @@ def create_access_token(
     else:
         expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    to_encode: Dict[str, Any] = {"exp": expire, "sub": str(subject)}
+    to_encode: dict[str, Any] = {"exp": expire, "sub": str(subject)}
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    Verify a password against a hash.
+    """Verify a password against a hash.
 
     Args:
         plain_password: The plain-text password to verify.
@@ -54,8 +50,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def get_password_hash(password: str) -> str:
-    """
-    Hash a password.
+    """Hash a password.
 
     Args:
         password: The password to hash.

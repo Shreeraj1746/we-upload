@@ -8,8 +8,7 @@ from sqlalchemy.ext.declarative import as_declarative, declared_attr
 
 @as_declarative()
 class Base:
-    """
-    Base class for all SQLAlchemy models.
+    """Base class for all SQLAlchemy models.
 
     This class provides common functionality, including automated table name generation
     based on the class name.
@@ -20,9 +19,8 @@ class Base:
 
     # Generate __tablename__ automatically
     @declared_attr
-    def __tablename__(cls) -> str:
-        """
-        Generate table name from class name.
+    def __tablename__(self) -> str:
+        """Generate table name from class name.
 
         Converts CamelCase to snake_case for the table name.
 
@@ -30,5 +28,5 @@ class Base:
             The table name in snake_case.
         """
         # Convert camel case to snake case
-        name = re.sub(r"(?<!^)(?=[A-Z])", "_", cls.__name__).lower()
+        name = re.sub(r"(?<!^)(?=[A-Z])", "_", self.__name__).lower()
         return name

@@ -1,15 +1,14 @@
 """File upload and download router."""
 
 import uuid
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from sqlalchemy.orm import Session
 
-from app.dependencies.auth import get_current_user
 from app.db.session import get_db
+from app.dependencies.auth import get_current_user
 from app.models.user import User
-from app.schemas.file import File, FileCreate, FileUpdate, FileUploadResponse, FileDownloadResponse
+from app.schemas.file import File, FileCreate, FileDownloadResponse, FileUpdate, FileUploadResponse
 from app.services.file_service import FileService
 
 router = APIRouter()
@@ -21,8 +20,7 @@ def create_upload_url(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> FileUploadResponse:
-    """
-    Create a presigned URL for uploading a file to S3.
+    """Create a presigned URL for uploading a file to S3.
 
     This endpoint generates a presigned URL that the client can use to upload
     a file directly to S3, bypassing the API server for the actual file data.
@@ -51,8 +49,7 @@ def create_download_url(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> FileDownloadResponse:
-    """
-    Create a presigned URL for downloading a file from S3.
+    """Create a presigned URL for downloading a file from S3.
 
     This endpoint generates a presigned URL that the client can use to download
     a file directly from S3, bypassing the API server for the actual file data.
@@ -79,15 +76,14 @@ def create_download_url(
         raise HTTPException(status_code=500, detail=f"Failed to generate download URL: {str(e)}")
 
 
-@router.get("", response_model=List[File])
+@router.get("", response_model=list[File])
 def list_files(
     skip: int = Query(0, ge=0, description="Number of files to skip"),
     limit: int = Query(100, ge=1, le=100, description="Maximum number of files to return"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> List[File]:
-    """
-    List files owned by the current user.
+) -> list[File]:
+    """List files owned by the current user.
 
     Args:
         skip: Number of records to skip (for pagination).
@@ -108,8 +104,7 @@ def get_file(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> File:
-    """
-    Get a specific file by ID.
+    """Get a specific file by ID.
 
     Args:
         file_id: The ID of the file to retrieve.
@@ -138,8 +133,7 @@ def update_file(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> File:
-    """
-    Update a file's metadata.
+    """Update a file's metadata.
 
     Args:
         file_id: The ID of the file to update.
@@ -170,8 +164,7 @@ def delete_file(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> File:
-    """
-    Delete a file.
+    """Delete a file.
 
     This deletes both the file metadata from the database and the actual file from S3.
 

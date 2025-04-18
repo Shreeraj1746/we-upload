@@ -1,6 +1,5 @@
 """File database model."""
 
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
@@ -22,8 +21,7 @@ if TYPE_CHECKING:
 
 
 class File(Base):
-    """
-    File model for storing file metadata.
+    """File model for storing file metadata.
 
     Attributes:
         id: Unique identifier for the file.

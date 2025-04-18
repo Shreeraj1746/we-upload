@@ -22,7 +22,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          pip install -e .
+          pip install pytest pytest-cov ruff mypy
 
       - name: Lint with Ruff
         run: ruff check .
@@ -72,7 +73,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          pip install -e .
+          pip install pytest pytest-cov
 
       - name: Run tests
         run: pytest --cov=app
