@@ -75,10 +75,12 @@ ignore = [
     "E501",   # Line too long
     "EM101",  # String literal in exception
     "EM102",  # f-string in exception
+    "FA100",  # Missing from __future__ import annotations
     "G004",   # Logging with f-string
     "PGH003", # Use specific rule codes for ignoring type issues
     "PGH004", # Use specific rule codes when using noqa
     "RUF012", # Mutable class attributes
+    "S104",   # Possible binding to all interfaces
     "T201",   # Print found
     "TRY002", # Create custom exceptions
     "TRY003", # Avoid long messages outside exception class
