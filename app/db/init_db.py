@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.security import get_password_hash
-from app.db.session import SessionLocal
+from app.db.session import SessionLocal, engine
 from app.models.user import User as UserModel
 from app.schemas.user import UserCreate
 
@@ -19,10 +19,20 @@ def init_db() -> None:
     Creates the database tables if they don't exist.
     """
     # Create db tables
+    # Import Base from base module to ensure all models are properly registered
     from app.db.base import Base
-    from app.db.session import engine
+    from app.db.relations import setup_relationships
 
-    Base.__class__.metadata.create_all(bind=engine)
+    # Setup relationships between models
+    setup_relationships()
+
+    logger.info("Creating database tables")
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database tables created")
+
+    # Create superuser if configured
+    if settings.FIRST_SUPERUSER and settings.FIRST_SUPERUSER_PASSWORD:
+        create_first_superuser()
 
 
 def create_first_superuser() -> None:

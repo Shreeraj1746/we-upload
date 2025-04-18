@@ -1,5 +1,6 @@
 """File database model."""
 
+import uuid
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
@@ -11,7 +12,6 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.db.base_class import Base
@@ -37,7 +37,7 @@ class File(Base):
         owner: The user who owns the file.
     """
 
-    id = Column(String(36), primary_key=True, index=True)
+    id = Column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     filename = Column(String(255), nullable=False)
     s3_key = Column(String(255), nullable=False, unique=True)
     content_type = Column(String(100), nullable=False)
@@ -48,5 +48,5 @@ class File(Base):
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
 
-    # Relationships
-    owner = relationship("User", back_populates="files")
+    # Define attributes that will be populated by relationship later
+    owner = None

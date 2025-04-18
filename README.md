@@ -77,6 +77,123 @@ docker-compose up -d
 # Documentation at http://localhost:8000/docs
 ```
 
+## Manual Testing
+
+### Setting Up the Local Environment
+
+```bash
+# Clone the repository if you haven't already
+git clone https://github.com/yourusername/we-upload.git
+cd we-upload
+
+# Start the local development environment
+docker-compose up -d
+
+# Wait for services to initialize
+# This may take a few seconds
+```
+
+### Initialize the Database
+
+The database tables need to be created on first run:
+
+```bash
+# Execute a command in the API container to initialize the database
+docker exec -it we-upload-api-1 python -c "from app.db.base import Base; from app.db.session import engine; Base.metadata.create_all(bind=engine)"
+```
+
+### Current Status and Known Issues
+
+The application has been fixed and is now working properly. The previous issues have been resolved:
+
+1. **Database Relationship Issue**: Fixed the circular dependency between User and File models by:
+   - Moving relationship definitions to a separate module
+   - Setting up relationships after both models are fully defined
+   - Using proper UUID generation for model IDs
+
+2. **Authentication Working**: User creation and authentication now work correctly:
+   - Database tables are created automatically on startup
+   - Initial superuser is created automatically
+   - Login endpoint returns valid JWT tokens
+
+### Testing API Endpoints
+
+Now you can test the complete application functionality:
+
+1. **Test Health Endpoints**:
+   ```bash
+   # Check API health
+   curl http://localhost:8000/health
+
+   # Check database connection
+   curl http://localhost:8000/health/db
+   ```
+
+2. **Authentication**:
+   ```bash
+   # Get an access token using the default admin credentials
+   curl -X 'POST' 'http://localhost:8000/login/access-token' \
+     -H 'Content-Type: application/x-www-form-urlencoded' \
+     -d 'username=admin%40example.com&password=admin'
+
+   # Save the token for later use
+   TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+   ```
+
+3. **User Information**:
+   ```bash
+   # Get the current user information
+   curl -X 'GET' 'http://localhost:8000/api/v1/users/me' \
+     -H 'Authorization: Bearer $TOKEN'
+   ```
+
+4. **Upload a File**:
+   ```bash
+   # Get a presigned URL for uploading
+   curl -X 'POST' 'http://localhost:8000/api/v1/files/upload' \
+     -H 'Authorization: Bearer $TOKEN' \
+     -H 'Content-Type: application/json' \
+     -d '{
+       "filename": "test.txt",
+       "content_type": "text/plain",
+       "size_bytes": 42,
+       "description": "Test file",
+       "is_public": true
+     }'
+
+   # Use the returned upload_url to upload the file directly to S3
+   curl -X 'PUT' '[upload_url]' \
+     -H 'Content-Type: text/plain' \
+     --data-binary @test.txt
+   ```
+
+5. **List Files**:
+   ```bash
+   # Get a list of all files
+   curl -X 'GET' 'http://localhost:8000/api/v1/files' \
+     -H 'Authorization: Bearer $TOKEN'
+   ```
+
+6. **Download a File**:
+   ```bash
+   # Get a presigned URL for downloading
+   curl -X 'GET' 'http://localhost:8000/api/v1/files/download/[file_id]' \
+     -H 'Authorization: Bearer $TOKEN'
+
+   # Use the returned download_url to download the file
+   curl -X 'GET' '[download_url]' -o downloaded_file.txt
+   ```
+
+### Cleanup
+
+```bash
+# Stop and remove containers
+docker-compose down
+
+# To remove volumes (database data and file storage)
+docker-compose down -v
+```
+
 ## Deployment
 
 This project uses Terraform to provision infrastructure on AWS and GitHub Actions for CI/CD. See the `docs/implementation_plan.md` for detailed instructions on each phase of deployment.
