@@ -2,12 +2,11 @@
 
 from typing import Optional
 
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel
 
 
 class Token(BaseModel):
-    """
-    Schema for authentication token.
+    """Schema for authentication token.
 
     Attributes:
         access_token: JWT token for authenticating requests.
@@ -19,8 +18,7 @@ class Token(BaseModel):
 
 
 class TokenPayload(BaseModel):
-    """
-    Schema for token payload.
+    """Schema for token payload.
 
     Attributes:
         sub: Subject of the token (user ID).

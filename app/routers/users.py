@@ -1,6 +1,5 @@
 """User router with CRUD endpoints."""
 
-from typing import Any, List
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query
 from fastapi.encoders import jsonable_encoder
@@ -17,15 +16,14 @@ from app.services.user_service import UserService
 router = APIRouter()
 
 
-@router.get("", response_model=List[UserSchema])
+@router.get("", response_model=list[UserSchema])
 def read_users(
     db: Session = Depends(get_db),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
     current_user: User = Depends(get_current_active_superuser),
-) -> List[User]:
-    """
-    Retrieve users.
+) -> list[User]:
+    """Retrieve users.
 
     Only superusers can access this endpoint.
 
@@ -50,8 +48,7 @@ def create_user(
     user_in: UserCreate,
     current_user: User = Depends(get_current_active_superuser),
 ) -> User:
-    """
-    Create a new user.
+    """Create a new user.
 
     Only superusers can access this endpoint.
 
@@ -81,8 +78,7 @@ def create_user(
 def read_user_me(
     current_user: User = Depends(get_current_active_user),
 ) -> User:
-    """
-    Get current user.
+    """Get current user.
 
     Args:
         current_user: The current user.
@@ -102,8 +98,7 @@ def update_user_me(
     email: EmailStr = Body(None),
     current_user: User = Depends(get_current_active_user),
 ) -> User:
-    """
-    Update current user.
+    """Update current user.
 
     Args:
         db: Database session.
@@ -134,8 +129,7 @@ def read_user_by_id(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> User:
-    """
-    Get a specific user by ID.
+    """Get a specific user by ID.
 
     Args:
         user_id: The ID of the user to retrieve.
@@ -154,9 +148,7 @@ def read_user_by_id(
     if user == current_user:
         return user
     if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=403, detail="Only superusers can access other users"
-        )
+        raise HTTPException(status_code=403, detail="Only superusers can access other users")
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -170,8 +162,7 @@ def update_user(
     user_in: UserUpdate,
     current_user: User = Depends(get_current_active_superuser),
 ) -> User:
-    """
-    Update a user.
+    """Update a user.
 
     Only superusers can access this endpoint.
 

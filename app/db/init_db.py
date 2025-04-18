@@ -1,7 +1,6 @@
 """Database initialization module."""
 
 import logging
-from typing import Dict, Optional
 
 from sqlalchemy.orm import Session
 
@@ -15,8 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def init_db() -> None:
-    """
-    Initialize the database.
+    """Initialize the database.
 
     Creates the database tables if they don't exist.
     """
@@ -28,8 +26,7 @@ def init_db() -> None:
 
 
 def create_first_superuser() -> None:
-    """
-    Create an initial superuser in the database.
+    """Create an initial superuser in the database.
 
     This function is called on application startup and creates a superuser
     if settings.FIRST_SUPERUSER and settings.FIRST_SUPERUSER_PASSWORD are set.
@@ -59,8 +56,7 @@ def create_first_superuser() -> None:
 
 
 def _user_exists(db: Session, email: str) -> bool:
-    """
-    Check if a user with the given email exists.
+    """Check if a user with the given email exists.
 
     Args:
         db: Database session.
@@ -73,8 +69,7 @@ def _user_exists(db: Session, email: str) -> bool:
 
 
 def _create_user(db: Session, obj_in: UserCreate) -> User:
-    """
-    Create a new user in the database.
+    """Create a new user in the database.
 
     Args:
         db: Database session.

@@ -18,8 +18,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def get_db() -> sessionmaker:
-    """
-    Get a database session.
+    """Get a database session.
 
     This function is used as a dependency in FastAPI endpoints.
 

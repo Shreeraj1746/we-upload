@@ -1,14 +1,13 @@
 """Application configuration settings module."""
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import AnyHttpUrl, PostgresDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """
-    Application settings.
+    """Application settings.
 
     This class uses Pydantic's BaseSettings which loads environment variables
     prefixed with 'WE_UPLOAD_'.
@@ -24,13 +23,12 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # CORS settings
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    BACKEND_CORS_ORIGINS: list[AnyHttpUrl] = []
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
-        """
-        Parse CORS origins from string.
+    def assemble_cors_origins(cls, v: Union[str, list[str]]) -> Union[list[str], str]:
+        """Parse CORS origins from string.
 
         Args:
             v: The value to be validated.
@@ -54,9 +52,8 @@ class Settings(BaseSettings):
 
     @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
     @classmethod
-    def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
-        """
-        Assemble the database connection URI.
+    def assemble_db_connection(cls, v: Optional[str], values: dict[str, Any]) -> Any:
+        """Assemble the database connection URI.
 
         Args:
             v: The value to be validated.

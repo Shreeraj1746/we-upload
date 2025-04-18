@@ -1,7 +1,7 @@
 """User service for user operations."""
 
 import uuid
-from typing import List, Optional, Union, Dict, Any
+from typing import Any, Optional, Union
 
 from sqlalchemy.orm import Session
 
@@ -11,16 +11,14 @@ from app.schemas.user import UserCreate, UserUpdate
 
 
 class UserService:
-    """
-    Service for user operations.
+    """Service for user operations.
 
     Attributes:
         db: Database session.
     """
 
     def __init__(self, db: Session):
-        """
-        Initialize the user service.
+        """Initialize the user service.
 
         Args:
             db: Database session.
@@ -28,8 +26,7 @@ class UserService:
         self.db = db
 
     def get(self, id: str) -> Optional[User]:
-        """
-        Get a user by ID.
+        """Get a user by ID.
 
         Args:
             id: User ID.
@@ -40,8 +37,7 @@ class UserService:
         return self.db.query(User).filter(User.id == id).first()
 
     def get_by_email(self, email: str) -> Optional[User]:
-        """
-        Get a user by email.
+        """Get a user by email.
 
         Args:
             email: User email.
@@ -51,9 +47,8 @@ class UserService:
         """
         return self.db.query(User).filter(User.email == email).first()
 
-    def get_multi(self, skip: int = 0, limit: int = 100) -> List[User]:
-        """
-        Get multiple users.
+    def get_multi(self, skip: int = 0, limit: int = 100) -> list[User]:
+        """Get multiple users.
 
         Args:
             skip: Number of records to skip.
@@ -65,8 +60,7 @@ class UserService:
         return self.db.query(User).offset(skip).limit(limit).all()
 
     def create(self, obj_in: UserCreate) -> User:
-        """
-        Create a new user.
+        """Create a new user.
 
         Args:
             obj_in: User creation data.
@@ -86,9 +80,8 @@ class UserService:
         self.db.refresh(db_obj)
         return db_obj
 
-    def update(self, db_obj: User, obj_in: Union[UserUpdate, Dict[str, Any]]) -> User:
-        """
-        Update a user.
+    def update(self, db_obj: User, obj_in: Union[UserUpdate, dict[str, Any]]) -> User:
+        """Update a user.
 
         Args:
             db_obj: Existing user object from the database.
@@ -117,8 +110,7 @@ class UserService:
         return db_obj
 
     def remove(self, id: str) -> Optional[User]:
-        """
-        Remove a user.
+        """Remove a user.
 
         Args:
             id: ID of the user to remove.
@@ -134,8 +126,7 @@ class UserService:
         return user
 
     def authenticate(self, email: str, password: str) -> Optional[User]:
-        """
-        Authenticate a user.
+        """Authenticate a user.
 
         Args:
             email: User email.
@@ -152,8 +143,7 @@ class UserService:
         return user
 
     def is_active(self, user: User) -> bool:
-        """
-        Check if a user is active.
+        """Check if a user is active.
 
         Args:
             user: User to check.
@@ -164,8 +154,7 @@ class UserService:
         return user.is_active
 
     def is_superuser(self, user: User) -> bool:
-        """
-        Check if a user is a superuser.
+        """Check if a user is a superuser.
 
         Args:
             user: User to check.

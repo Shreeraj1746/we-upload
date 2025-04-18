@@ -1,6 +1,5 @@
 """Authentication dependencies for FastAPI routes."""
 
-from typing import Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -20,11 +19,8 @@ from app.services.user_service import UserService
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access-token")
 
 
-def get_current_user(
-    db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)
-) -> User:
-    """
-    Get the current user based on the JWT token.
+def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)) -> User:
+    """Get the current user based on the JWT token.
 
     Args:
         db: Database session.
@@ -60,8 +56,7 @@ def get_current_user(
 
 
 def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
-    """
-    Get the current active user.
+    """Get the current active user.
 
     Args:
         current_user: The current user.
@@ -78,8 +73,7 @@ def get_current_active_user(current_user: User = Depends(get_current_user)) -> U
 
 
 def get_current_active_superuser(current_user: User = Depends(get_current_user)) -> User:
-    """
-    Get the current active superuser.
+    """Get the current active superuser.
 
     Args:
         current_user: The current user.
@@ -91,7 +85,5 @@ def get_current_active_superuser(current_user: User = Depends(get_current_user))
         HTTPException: If the user is not a superuser.
     """
     if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=403, detail="The user doesn't have enough privileges"
-        )
+        raise HTTPException(status_code=403, detail="The user doesn't have enough privileges")
     return current_user

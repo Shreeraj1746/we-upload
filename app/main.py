@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.db.init_db import create_first_superuser
-from app.routers import files, health, users, login
+from app.routers import files, health, login, users
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -35,8 +35,7 @@ app.include_router(files.router, prefix=f"{settings.API_V1_STR}/files", tags=["f
 
 @app.on_event("startup")
 async def startup_event() -> None:
-    """
-    Execute actions on application startup.
+    """Execute actions on application startup.
 
     This function is called when the FastAPI application starts. It's used for
     initializing resources, database connections, and executing startup tasks.
