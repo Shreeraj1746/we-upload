@@ -36,6 +36,7 @@
   - Fixed class method parameter name issues
   - Restored Terraform checks to ensure infrastructure quality
   - Temporarily disabled strict linting rules for gradual code cleanup
+  - Added exceptions for Python 3.9 typing compatibility (FA100)
 - Development setup improved:
   - Added comprehensive development guide (docs/development.md)
   - Enhanced error handling with virtual environment checks
