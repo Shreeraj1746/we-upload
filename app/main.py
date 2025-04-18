@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.db.init_db import create_first_superuser
+from app.db.init_db import create_first_superuser, init_db
 from app.routers import files, health, login, users
 
 app = FastAPI(
@@ -40,6 +40,9 @@ async def startup_event() -> None:
     This function is called when the FastAPI application starts. It's used for
     initializing resources, database connections, and executing startup tasks.
     """
+    # Initialize database and create tables if they don't exist
+    init_db()
+
     # Create initial superuser if configured
     if settings.FIRST_SUPERUSER:
         create_first_superuser()
