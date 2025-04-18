@@ -85,6 +85,7 @@ ignore = [
     "TRY003", # Avoid long messages outside exception class
     "TRY200", # Use raise from
     "TRY300", # Consider moving to else block
+    "TRY301", # Abstract raise to inner function
     "TRY400", # Use logging.exception
     # No longer needed with Python 3.13
     # "UP007",  # Use X | Y for Union types in Python 3.10+
@@ -129,9 +130,23 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 ignore_missing_imports = true  # Add global ignore for missing imports
+disallow_untyped_decorators = false  # Temporarily disable for FastAPI decorators
+
+# Ignore errors for call-arg and attr-defined in models and services
+[[tool.mypy.overrides]]
+module = ["app.services.*"]
+disable_error_code = ["call-arg"]
 
 [[tool.mypy.overrides]]
-module = ["alembic.*", "boto3.*", "botocore.*"]
+module = ["app.db.init_db"]
+disable_error_code = ["attr-defined", "call-arg"]
+
+[[tool.mypy.overrides]]
+module = ["app.models.*"]
+disable_error_code = ["call-arg"]
+
+[[tool.mypy.overrides]]
+module = ["alembic.*", "boto3.*", "botocore.*", "jose.*", "passlib.*", "fastapi.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.dependencies.auth import get_current_active_superuser, get_current_active_user
-from app.models.user import User
+from app.models.user import User as UserModel
 from app.schemas.user import (
     User as UserSchema,
     UserCreate,
@@ -24,8 +24,8 @@ def read_users(
     db: Session = Depends(get_db),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
-    current_user: User = Depends(get_current_active_superuser),
-) -> list[User]:
+    current_user: UserModel = Depends(get_current_active_superuser),
+) -> list[UserModel]:
     """Retrieve users.
 
     Only superusers can access this endpoint.
@@ -49,8 +49,8 @@ def create_user(
     *,
     db: Session = Depends(get_db),
     user_in: UserCreate,
-    current_user: User = Depends(get_current_active_superuser),
-) -> User:
+    current_user: UserModel = Depends(get_current_active_superuser),
+) -> UserModel:
     """Create a new user.
 
     Only superusers can access this endpoint.
@@ -79,8 +79,8 @@ def create_user(
 
 @router.get("/me", response_model=UserSchema)
 def read_user_me(
-    current_user: User = Depends(get_current_active_user),
-) -> User:
+    current_user: UserModel = Depends(get_current_active_user),
+) -> UserModel:
     """Get current user.
 
     Args:
@@ -99,8 +99,8 @@ def update_user_me(
     password: str = Body(None),
     full_name: str = Body(None),
     email: EmailStr = Body(None),
-    current_user: User = Depends(get_current_active_user),
-) -> User:
+    current_user: UserModel = Depends(get_current_active_user),
+) -> UserModel:
     """Update current user.
 
     Args:
@@ -129,9 +129,9 @@ def update_user_me(
 @router.get("/{user_id}", response_model=UserSchema)
 def read_user_by_id(
     user_id: str = Path(...),
-    current_user: User = Depends(get_current_active_user),
+    current_user: UserModel = Depends(get_current_active_user),
     db: Session = Depends(get_db),
-) -> User:
+) -> UserModel:
     """Get a specific user by ID.
 
     Args:
@@ -163,8 +163,8 @@ def update_user(
     db: Session = Depends(get_db),
     user_id: str = Path(...),
     user_in: UserUpdate,
-    current_user: User = Depends(get_current_active_superuser),
-) -> User:
+    current_user: UserModel = Depends(get_current_active_superuser),
+) -> UserModel:
     """Update a user.
 
     Only superusers can access this endpoint.

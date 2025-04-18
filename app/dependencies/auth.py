@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.security import ALGORITHM
 from app.db.session import get_db
-from app.models.user import User
+from app.models.user import User as UserModel
 from app.schemas.token import TokenPayload
 from app.services.user_service import UserService
 
@@ -19,7 +19,9 @@ from app.services.user_service import UserService
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access-token")
 
 
-def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)) -> User:
+def get_current_user(
+    db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)
+) -> UserModel:
     """Get the current user based on the JWT token.
 
     Args:
@@ -55,7 +57,7 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     return user
 
 
-def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
+def get_current_active_user(current_user: UserModel = Depends(get_current_user)) -> UserModel:
     """Get the current active user.
 
     Args:
@@ -72,7 +74,7 @@ def get_current_active_user(current_user: User = Depends(get_current_user)) -> U
     return current_user
 
 
-def get_current_active_superuser(current_user: User = Depends(get_current_user)) -> User:
+def get_current_active_superuser(current_user: UserModel = Depends(get_current_user)) -> UserModel:
     """Get the current active superuser.
 
     Args:
