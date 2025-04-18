@@ -16,6 +16,8 @@
 - CI/CD with GitHub Actions:
   - CI workflow for linting, testing, and building
   - CD workflow for deploying to AWS
+- Pre-commit hooks fixed and properly installed for code quality enforcement
+- System architecture diagram added to implementation plan document
 
 ## Next Steps
 - Add unit and integration tests
@@ -33,6 +35,8 @@
 - Docker and Docker Compose setup
 - Terraform module creation
 - GitHub Actions workflows
+- Pre-commit hooks installation and configuration
+- System architecture diagram creation and documentation
 
 ## Issues
 None yet
