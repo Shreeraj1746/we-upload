@@ -18,7 +18,7 @@ class Base:
     __name__: str
 
     # Generate __tablename__ automatically
-    @declared_attr
+    @declared_attr  # type: ignore
     def __tablename__(self) -> str:
         """Generate table name from class name.
 

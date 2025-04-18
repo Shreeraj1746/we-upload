@@ -49,8 +49,12 @@ jobs:
       - name: Lint with pre-commit
         run: pre-commit run --all-files
 
+      - name: Install type stubs for MyPy
+        run: |
+          pip install types-python-jose types-passlib types-boto3 types-requests types-pyyaml types-toml
+
       - name: Type check with MyPy
-        run: mypy app tests
+        run: mypy --config-file mypy.ini app tests
 
   test:
     name: Testing

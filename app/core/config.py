@@ -64,14 +64,17 @@ class Settings(BaseSettings):
         """
         if isinstance(v, str):
             return v
-        return PostgresDsn.build(
-            scheme="postgresql",
-            username=values.get("POSTGRES_USER"),
-            password=values.get("POSTGRES_PASSWORD"),
-            host=values.get("POSTGRES_SERVER"),
-            port=values.get("POSTGRES_PORT"),
-            path=f"{values.get('POSTGRES_DB') or ''}",
-        )
+        try:
+            return PostgresDsn.build(
+                scheme="postgresql",
+                username=values.get("POSTGRES_USER"),
+                password=values.get("POSTGRES_PASSWORD"),
+                host=values.get("POSTGRES_SERVER"),
+                port=values.get("POSTGRES_PORT"),
+                path=f"{values.get('POSTGRES_DB') or ''}",
+            )
+        except Exception:
+            return None
 
     # JWT settings
     SECRET_KEY: str

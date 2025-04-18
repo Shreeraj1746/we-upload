@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.dependencies.auth import get_current_user
-from app.models.user import User
+from app.models.user import User as UserModel
 from app.schemas.file import File, FileCreate, FileDownloadResponse, FileUpdate, FileUploadResponse
 from app.services.file_service import FileService
 
@@ -18,7 +18,7 @@ router = APIRouter()
 def create_upload_url(
     file_info: FileCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ) -> FileUploadResponse:
     """Create a presigned URL for uploading a file to S3.
 
@@ -47,7 +47,7 @@ def create_upload_url(
 def create_download_url(
     file_id: uuid.UUID = Path(..., description="The ID of the file to download"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ) -> FileDownloadResponse:
     """Create a presigned URL for downloading a file from S3.
 
@@ -81,12 +81,12 @@ def list_files(
     skip: int = Query(0, ge=0, description="Number of files to skip"),
     limit: int = Query(100, ge=1, le=100, description="Maximum number of files to return"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ) -> list[File]:
-    """List files owned by the current user.
+    """List all files owned by the current user.
 
     Args:
-        skip: Number of records to skip (for pagination).
+        skip: Number of files to skip (for pagination).
         limit: Maximum number of records to return (for pagination).
         db: Database session.
         current_user: The authenticated user making the request.
@@ -95,14 +95,17 @@ def list_files(
         A list of files owned by the user.
     """
     file_service = FileService(db)
-    return file_service.get_multi_by_owner(owner_id=current_user.id, skip=skip, limit=limit)
+    files = file_service.get_multi_by_owner(
+        owner_id=uuid.UUID(str(current_user.id)), skip=skip, limit=limit
+    )
+    return [File.model_validate(file) for file in files]
 
 
 @router.get("/{file_id}", response_model=File)
 def get_file(
     file_id: uuid.UUID = Path(..., description="The ID of the file to retrieve"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ) -> File:
     """Get a specific file by ID.
 
@@ -123,7 +126,7 @@ def get_file(
         raise HTTPException(status_code=404, detail="File not found")
     if not file.is_public and file.owner_id != current_user.id and not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Not enough permissions to access this file")
-    return file
+    return File.model_validate(file)
 
 
 @router.put("/{file_id}", response_model=File)
@@ -131,7 +134,7 @@ def update_file(
     file_id: uuid.UUID,
     file_in: FileUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ) -> File:
     """Update a file's metadata.
 
@@ -155,14 +158,14 @@ def update_file(
         raise HTTPException(status_code=403, detail="Not enough permissions to modify this file")
 
     file = file_service.update(db_obj=file, obj_in=file_in)
-    return file
+    return File.model_validate(file)
 
 
 @router.delete("/{file_id}", response_model=File)
 def delete_file(
     file_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ) -> File:
     """Delete a file.
 
@@ -188,6 +191,8 @@ def delete_file(
 
     try:
         file = file_service.remove(id=file_id)
-        return file
+        if not file:
+            raise HTTPException(status_code=404, detail="File not found")
+        return File.model_validate(file)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete file: {e!s}")

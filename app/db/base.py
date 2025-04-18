@@ -5,5 +5,9 @@ This module is used by Alembic to generate migrations.
 
 # Import all the models, so that Alembic can detect them
 from app.db.base_class import Base  # noqa
-from app.models.file import File  # noqa
-from app.models.user import User  # noqa
+from app.models.file import File
+from app.models.user import User
+
+# Add type annotations to help mypy
+FileModel = File
+UserModel = User

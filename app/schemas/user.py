@@ -43,7 +43,7 @@ class UserUpdate(UserBase):
         password: User's password (optional).
     """
 
-    email: EmailStr | None = None
+    email: EmailStr = None
     password: str | None = None
 
 

@@ -8,8 +8,8 @@ from botocore.exceptions import ClientError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models.file import File
-from app.models.user import User
+from app.models.file import File as FileModel
+from app.models.user import User as UserModel
 from app.schemas.file import FileCreate, FileDownloadResponse, FileUpdate, FileUploadResponse
 
 
@@ -38,7 +38,7 @@ class FileService:
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         )
 
-    def get(self, id: uuid.UUID) -> File | None:
+    def get(self, id: uuid.UUID) -> FileModel | None:
         """Get a file by ID.
 
         Args:
@@ -47,9 +47,9 @@ class FileService:
         Returns:
             The file with the given ID or None if not found.
         """
-        return self.db.query(File).filter(File.id == id).first()
+        return self.db.query(FileModel).filter(FileModel.id == id).first()
 
-    def get_multi(self, skip: int = 0, limit: int = 100) -> list[File]:
+    def get_multi(self, skip: int = 0, limit: int = 100) -> list[FileModel]:
         """Get multiple files.
 
         Args:
@@ -59,11 +59,11 @@ class FileService:
         Returns:
             A list of files.
         """
-        return self.db.query(File).offset(skip).limit(limit).all()
+        return self.db.query(FileModel).offset(skip).limit(limit).all()
 
     def get_multi_by_owner(
         self, owner_id: uuid.UUID, skip: int = 0, limit: int = 100
-    ) -> list[File]:
+    ) -> list[FileModel]:
         """Get multiple files by owner.
 
         Args:
@@ -74,9 +74,15 @@ class FileService:
         Returns:
             A list of files owned by the specified user.
         """
-        return self.db.query(File).filter(File.owner_id == owner_id).offset(skip).limit(limit).all()
+        return (
+            self.db.query(FileModel)
+            .filter(FileModel.owner_id == owner_id)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
-    def create(self, obj_in: FileCreate, owner_id: uuid.UUID) -> File:
+    def create(self, obj_in: FileCreate, owner_id: uuid.UUID) -> FileModel:
         """Create a new file metadata record.
 
         Args:
@@ -89,7 +95,7 @@ class FileService:
         file_id = uuid.uuid4()
         s3_key = f"{owner_id}/{file_id}/{obj_in.filename}"
 
-        db_obj = File(
+        db_obj = FileModel(
             id=str(file_id),
             filename=obj_in.filename,
             s3_key=s3_key,
@@ -104,7 +110,7 @@ class FileService:
         self.db.refresh(db_obj)
         return db_obj
 
-    def update(self, db_obj: File, obj_in: FileUpdate | dict[str, Any]) -> File:
+    def update(self, db_obj: FileModel, obj_in: FileUpdate | dict[str, Any]) -> FileModel:
         """Update a file's metadata.
 
         Args:
@@ -128,7 +134,7 @@ class FileService:
         self.db.refresh(db_obj)
         return db_obj
 
-    def remove(self, id: uuid.UUID) -> File | None:
+    def remove(self, id: uuid.UUID) -> FileModel | None:
         """Remove a file.
 
         This removes both the file metadata from the database and
@@ -143,7 +149,7 @@ class FileService:
         Raises:
             Exception: If there's an error deleting the file from S3.
         """
-        file_obj = self.db.query(File).filter(File.id == id).first()
+        file_obj = self.db.query(FileModel).filter(FileModel.id == id).first()
         if not file_obj:
             return None
 
@@ -162,7 +168,7 @@ class FileService:
         self.db.commit()
         return file_obj
 
-    def create_upload_url(self, file_info: FileCreate, user: User) -> FileUploadResponse:
+    def create_upload_url(self, file_info: FileCreate, user: UserModel) -> FileUploadResponse:
         """Create a presigned URL for file upload and register the file metadata.
 
         Args:
@@ -176,7 +182,7 @@ class FileService:
             Exception: If there's an error generating the presigned URL.
         """
         # Create file metadata
-        file_obj = self.create(obj_in=file_info, owner_id=uuid.UUID(user.id))
+        file_obj = self.create(obj_in=file_info, owner_id=uuid.UUID(str(user.id)))
 
         # Generate presigned URL for upload
         try:
@@ -191,7 +197,7 @@ class FileService:
             )
             return FileUploadResponse(
                 upload_url=upload_url,
-                file_id=uuid.UUID(file_obj.id),
+                file_id=uuid.UUID(str(file_obj.id)),
             )
         except ClientError as e:
             # If URL generation fails, clean up the metadata
@@ -199,7 +205,7 @@ class FileService:
             self.db.commit()
             raise Exception(f"Error generating presigned URL: {e}")
 
-    def create_download_url(self, file_id: uuid.UUID, user: User) -> FileDownloadResponse:
+    def create_download_url(self, file_id: uuid.UUID, user: UserModel) -> FileDownloadResponse:
         """Create a presigned URL for file download.
 
         Args:
@@ -235,8 +241,8 @@ class FileService:
             )
             return FileDownloadResponse(
                 download_url=download_url,
-                filename=file_obj.filename,
-                content_type=file_obj.content_type,
+                filename=str(file_obj.filename),
+                content_type=str(file_obj.content_type),
             )
         except ClientError as e:
             raise Exception(f"Error generating presigned URL: {e}")

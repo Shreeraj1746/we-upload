@@ -6,7 +6,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.core.security import get_password_hash, verify_password
-from app.models.user import User
+from app.models.user import User as UserModel
 from app.schemas.user import UserCreate, UserUpdate
 
 
@@ -25,7 +25,7 @@ class UserService:
         """
         self.db = db
 
-    def get(self, id: str) -> User | None:
+    def get(self, id: str) -> UserModel | None:
         """Get a user by ID.
 
         Args:
@@ -34,9 +34,9 @@ class UserService:
         Returns:
             The user with the given ID or None if not found.
         """
-        return self.db.query(User).filter(User.id == id).first()
+        return self.db.query(UserModel).filter(UserModel.id == id).first()
 
-    def get_by_email(self, email: str) -> User | None:
+    def get_by_email(self, email: str) -> UserModel | None:
         """Get a user by email.
 
         Args:
@@ -45,9 +45,9 @@ class UserService:
         Returns:
             The user with the given email or None if not found.
         """
-        return self.db.query(User).filter(User.email == email).first()
+        return self.db.query(UserModel).filter(UserModel.email == email).first()
 
-    def get_multi(self, skip: int = 0, limit: int = 100) -> list[User]:
+    def get_multi(self, skip: int = 0, limit: int = 100) -> list[UserModel]:
         """Get multiple users.
 
         Args:
@@ -57,9 +57,9 @@ class UserService:
         Returns:
             A list of users.
         """
-        return self.db.query(User).offset(skip).limit(limit).all()
+        return self.db.query(UserModel).offset(skip).limit(limit).all()
 
-    def create(self, obj_in: UserCreate) -> User:
+    def create(self, obj_in: UserCreate) -> UserModel:
         """Create a new user.
 
         Args:
@@ -68,7 +68,7 @@ class UserService:
         Returns:
             The created user.
         """
-        db_obj = User(
+        db_obj = UserModel(
             id=str(uuid.uuid4()),
             email=obj_in.email,
             hashed_password=get_password_hash(obj_in.password),
@@ -80,7 +80,7 @@ class UserService:
         self.db.refresh(db_obj)
         return db_obj
 
-    def update(self, db_obj: User, obj_in: UserUpdate | dict[str, Any]) -> User:
+    def update(self, db_obj: UserModel, obj_in: UserUpdate | dict[str, Any]) -> UserModel:
         """Update a user.
 
         Args:
@@ -109,7 +109,7 @@ class UserService:
         self.db.refresh(db_obj)
         return db_obj
 
-    def remove(self, id: str) -> User | None:
+    def remove(self, id: str) -> UserModel | None:
         """Remove a user.
 
         Args:
@@ -118,14 +118,14 @@ class UserService:
         Returns:
             The removed user or None if not found.
         """
-        user = self.db.query(User).filter(User.id == id).first()
+        user = self.db.query(UserModel).filter(UserModel.id == id).first()
         if not user:
             return None
         self.db.delete(user)
         self.db.commit()
         return user
 
-    def authenticate(self, email: str, password: str) -> User | None:
+    def authenticate(self, email: str, password: str) -> UserModel | None:
         """Authenticate a user.
 
         Args:
@@ -138,11 +138,11 @@ class UserService:
         user = self.get_by_email(email=email)
         if not user:
             return None
-        if not verify_password(password, user.hashed_password):
+        if not verify_password(password, str(user.hashed_password)):
             return None
         return user
 
-    def is_active(self, user: User) -> bool:
+    def is_active(self, user: UserModel) -> bool:
         """Check if a user is active.
 
         Args:
@@ -151,9 +151,9 @@ class UserService:
         Returns:
             True if the user is active, False otherwise.
         """
-        return user.is_active
+        return bool(user.is_active)
 
-    def is_superuser(self, user: User) -> bool:
+    def is_superuser(self, user: UserModel) -> bool:
         """Check if a user is a superuser.
 
         Args:
@@ -162,4 +162,4 @@ class UserService:
         Returns:
             True if the user is a superuser, False otherwise.
         """
-        return user.is_superuser
+        return bool(user.is_superuser)

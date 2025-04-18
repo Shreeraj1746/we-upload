@@ -1,6 +1,7 @@
 """Health check router for the API."""
 
 from fastapi import APIRouter, Depends
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -33,5 +34,5 @@ def db_health_check(db: Session = Depends(get_db)) -> dict:
         A dictionary with database connection status.
     """
     # Execute a simple query to check database connectivity
-    db.execute("SELECT 1")
+    db.execute(text("SELECT 1"))
     return {"status": "ok", "database": "connected"}
