@@ -17,5 +17,5 @@ def setup_relationships() -> None:
     It sets up the relationship between User and File models to avoid circular imports.
     """
     # Set up the relationship between User and File
-    User.files = relationship("File", back_populates="owner")
-    File.owner = relationship("User", back_populates="files")
+    User.files = relationship("File", back_populates="owner")  # type: ignore
+    File.owner = relationship("User", back_populates="files")  # type: ignore
