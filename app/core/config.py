@@ -1,6 +1,6 @@
 """Application configuration settings module."""
 
-from typing import Any, Optional, Union
+from typing import Any
 
 from pydantic import AnyHttpUrl, PostgresDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -27,7 +27,7 @@ class Settings(BaseSettings):
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
-    def assemble_cors_origins(cls, v: Union[str, list[str]]) -> Union[list[str], str]:
+    def assemble_cors_origins(cls, v: str | list[str]) -> list[str] | str:
         """Parse CORS origins from string.
 
         Args:
@@ -38,7 +38,7 @@ class Settings(BaseSettings):
         """
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
+        elif isinstance(v, list | str):
             return v
         raise ValueError(v)
 
@@ -48,11 +48,11 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
     POSTGRES_PORT: str = "5432"
-    SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
+    SQLALCHEMY_DATABASE_URI: PostgresDsn | None = None
 
     @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
     @classmethod
-    def assemble_db_connection(cls, v: Optional[str], values: dict[str, Any]) -> Any:
+    def assemble_db_connection(cls, v: str | None, values: dict[str, Any]) -> Any:
         """Assemble the database connection URI.
 
         Args:
@@ -79,14 +79,14 @@ class Settings(BaseSettings):
 
     # AWS settings
     AWS_REGION: str = "us-east-1"
-    AWS_ACCESS_KEY_ID: Optional[str] = None
-    AWS_SECRET_ACCESS_KEY: Optional[str] = None
+    AWS_ACCESS_KEY_ID: str | None = None
+    AWS_SECRET_ACCESS_KEY: str | None = None
     S3_BUCKET_NAME: str
     PRESIGNED_URL_EXPIRY: int = 3600  # 1 hour
 
     # User settings
-    FIRST_SUPERUSER: Optional[str] = None
-    FIRST_SUPERUSER_PASSWORD: Optional[str] = None
+    FIRST_SUPERUSER: str | None = None
+    FIRST_SUPERUSER_PASSWORD: str | None = None
 
 
 # Create a global settings instance

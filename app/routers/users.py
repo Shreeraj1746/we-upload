@@ -9,8 +9,11 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.dependencies.auth import get_current_active_superuser, get_current_active_user
 from app.models.user import User
-from app.schemas.user import User as UserSchema
-from app.schemas.user import UserCreate, UserUpdate
+from app.schemas.user import (
+    User as UserSchema,
+    UserCreate,
+    UserUpdate,
+)
 from app.services.user_service import UserService
 
 router = APIRouter()

@@ -1,7 +1,7 @@
 """File service for file operations."""
 
 import uuid
-from typing import Any, Optional, Union
+from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError
@@ -38,7 +38,7 @@ class FileService:
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         )
 
-    def get(self, id: uuid.UUID) -> Optional[File]:
+    def get(self, id: uuid.UUID) -> File | None:
         """Get a file by ID.
 
         Args:
@@ -104,7 +104,7 @@ class FileService:
         self.db.refresh(db_obj)
         return db_obj
 
-    def update(self, db_obj: File, obj_in: Union[FileUpdate, dict[str, Any]]) -> File:
+    def update(self, db_obj: File, obj_in: FileUpdate | dict[str, Any]) -> File:
         """Update a file's metadata.
 
         Args:
@@ -128,7 +128,7 @@ class FileService:
         self.db.refresh(db_obj)
         return db_obj
 
-    def remove(self, id: uuid.UUID) -> Optional[File]:
+    def remove(self, id: uuid.UUID) -> File | None:
         """Remove a file.
 
         This removes both the file metadata from the database and

@@ -1,7 +1,6 @@
 """User Pydantic schemas."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import UUID4, BaseModel, EmailStr
 
@@ -18,7 +17,7 @@ class UserBase(BaseModel):
     """
 
     email: EmailStr
-    full_name: Optional[str] = None
+    full_name: str | None = None
     is_active: bool = True
     is_superuser: bool = False
 
@@ -44,8 +43,8 @@ class UserUpdate(UserBase):
         password: User's password (optional).
     """
 
-    email: Optional[EmailStr] = None
-    password: Optional[str] = None
+    email: EmailStr | None = None
+    password: str | None = None
 
 
 # Properties shared by models stored in DB
@@ -71,8 +70,6 @@ class UserInDBBase(UserBase):
 # Properties to return via API
 class User(UserInDBBase):
     """Schema for user data returned via API."""
-
-    pass
 
 
 # Properties stored in DB
