@@ -3,12 +3,12 @@ version: '3.8'
 services:
   api:
     build:
-      context: ./api
+      context: .
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
     volumes:
-      - ./api:/app
+      - .:/app
     environment:
       - WE_UPLOAD_DEBUG=true
       - WE_UPLOAD_POSTGRES_SERVER=db
