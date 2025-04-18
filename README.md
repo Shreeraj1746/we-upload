@@ -9,6 +9,7 @@ A robust, scalable backend system for file uploading and sharing, built with Fas
 - **Metadata Management**: Store and retrieve file metadata
 - **Cloud-Native Architecture**: Deployed on AWS (staying within Free Tier limits)
 - **Fully Automated CI/CD**: Using GitHub Actions for testing, building, and deployment
+- **Modern Python**: Leverages Python 3.13's latest features and type hinting
 
 ## Repository Structure
 
@@ -48,10 +49,26 @@ A robust, scalable backend system for file uploading and sharing, built with Fas
 
 ## Local Development
 
+### Prerequisites
+
+- Python 3.13 or higher
+- Docker and Docker Compose
+- Terraform (for infrastructure deployment)
+
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/we-upload.git
 cd we-upload
+
+# Create a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -e ".[dev]"
+
+# Set up pre-commit hooks
+pre-commit install
 
 # Start local services
 docker-compose up -d
