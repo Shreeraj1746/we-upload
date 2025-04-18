@@ -1,6 +1,6 @@
 """Application configuration settings module."""
 
-from typing import Any
+from typing import Any, no_type_check
 
 from pydantic import AnyHttpUrl, PostgresDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     POSTGRES_PORT: str = "5432"
     SQLALCHEMY_DATABASE_URI: PostgresDsn | None = None
 
+    @no_type_check
     @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
     @classmethod
     def assemble_db_connection(
