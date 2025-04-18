@@ -34,7 +34,7 @@ class UserCreate(UserBase):
 
 
 # Properties to receive via API on update
-class UserUpdate(UserBase):
+class UserUpdate(BaseModel):
     """Schema for updating a user.
 
     All fields are optional to allow partial updates.
@@ -44,7 +44,10 @@ class UserUpdate(UserBase):
     """
 
     email: EmailStr | None = None
+    full_name: str | None = None
     password: str | None = None
+    is_active: bool | None = None
+    is_superuser: bool | None = None
 
 
 # Properties shared by models stored in DB
