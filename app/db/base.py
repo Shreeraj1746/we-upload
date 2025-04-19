@@ -5,6 +5,3 @@ This module is used by Alembic to generate migrations.
 
 # Import the base class first
 from app.db.base_class import Base  # noqa
-
-# Import models in the correct order to avoid circular dependencies
-# Import model classes without relationships
