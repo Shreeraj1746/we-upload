@@ -116,6 +116,18 @@ The application has been fixed and is now working properly. The previous issues 
    - Initial superuser is created automatically
    - Login endpoint returns valid JWT tokens
 
+3. **MinIO S3 Integration**: Fixed the integration with local MinIO for file storage:
+   - Added proper endpoint URL configuration in the S3 client
+   - Set path-style addressing for MinIO compatibility
+   - Implemented debug mode detection for local development
+   - Fixed hostname resolution for presigned URLs (replacing 'minio:9000' with 'localhost:9000')
+
+4. **UUID Type Handling**: Fixed database type mismatches between UUID and string types:
+   - Ensured consistent type conversion before database operations
+   - Added support for both UUID and string ID parameters
+   - Fixed the "operator does not exist: character varying = uuid" error when listing files
+   - Fixed file download functionality that was affected by the same issue
+
 ### Testing API Endpoints
 
 Now you can test the complete application functionality:
@@ -136,22 +148,38 @@ Now you can test the complete application functionality:
      -H 'Content-Type: application/x-www-form-urlencoded' \
      -d 'username=admin%40example.com&password=admin'
 
-   # Save the token for later use
+   # The response will contain your access token
+   # Copy the full token value from the response and set it as an environment variable:
    TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+   # Alternatively, you can extract the token automatically (requires jq):
+   # TOKEN=$(curl -s -X 'POST' 'http://localhost:8000/login/access-token' \
+   #   -H 'Content-Type: application/x-www-form-urlencoded' \
+   #   -d 'username=admin%40example.com&password=admin' | jq -r '.access_token')
+
+   # Verify the token is set correctly:
+   echo $TOKEN
    ```
+
+   > **Note:** When using the token in curl commands, make sure to use **double quotes** for the Authorization header
+   > (e.g., `-H "Authorization: Bearer $TOKEN"`) so that the shell expands the $TOKEN variable.
+   > Single quotes would prevent variable expansion.
 
 3. **User Information**:
    ```bash
    # Get the current user information
    curl -X 'GET' 'http://localhost:8000/api/v1/users/me' \
-     -H 'Authorization: Bearer $TOKEN'
+     -H "Authorization: Bearer $TOKEN"
    ```
 
 4. **Upload a File**:
    ```bash
+   # First, create a sample test file
+   echo "This is a test file" > test.txt
+
    # Get a presigned URL for uploading
-   curl -X 'POST' 'http://localhost:8000/api/v1/files/upload' \
-     -H 'Authorization: Bearer $TOKEN' \
+   UPLOAD_RESPONSE=$(curl -s -X 'POST' 'http://localhost:8000/api/v1/files/upload' \
+     -H "Authorization: Bearer $TOKEN" \
      -H 'Content-Type: application/json' \
      -d '{
        "filename": "test.txt",
@@ -159,10 +187,18 @@ Now you can test the complete application functionality:
        "size_bytes": 42,
        "description": "Test file",
        "is_public": true
-     }'
+     }')
 
-   # Use the returned upload_url to upload the file directly to S3
-   curl -X 'PUT' '[upload_url]' \
+   # Extract the upload URL and file ID (requires jq)
+   # If you don't have jq, you can manually copy these values from the response
+   UPLOAD_URL=$(echo $UPLOAD_RESPONSE | jq -r '.upload_url')
+   FILE_ID=$(echo $UPLOAD_RESPONSE | jq -r '.file_id')
+
+   echo "Upload URL: $UPLOAD_URL"
+   echo "File ID: $FILE_ID"
+
+   # Upload the file using the presigned URL
+   curl -X 'PUT' "$UPLOAD_URL" \
      -H 'Content-Type: text/plain' \
      --data-binary @test.txt
    ```
@@ -171,18 +207,59 @@ Now you can test the complete application functionality:
    ```bash
    # Get a list of all files
    curl -X 'GET' 'http://localhost:8000/api/v1/files' \
-     -H 'Authorization: Bearer $TOKEN'
+     -H "Authorization: Bearer $TOKEN"
    ```
 
 6. **Download a File**:
    ```bash
    # Get a presigned URL for downloading
-   curl -X 'GET' 'http://localhost:8000/api/v1/files/download/[file_id]' \
-     -H 'Authorization: Bearer $TOKEN'
+   # Use the FILE_ID from the upload step
+   DOWNLOAD_RESPONSE=$(curl -s -X 'GET' "http://localhost:8000/api/v1/files/download/$FILE_ID" \
+     -H "Authorization: Bearer $TOKEN")
 
-   # Use the returned download_url to download the file
-   curl -X 'GET' '[download_url]' -o downloaded_file.txt
+   # Extract the download URL (requires jq)
+   DOWNLOAD_URL=$(echo "$DOWNLOAD_RESPONSE" | jq -r '.download_url')
+
+   echo "Download URL: $DOWNLOAD_URL"
+
+   # Download the file
+   curl -X 'GET' "$DOWNLOAD_URL" -o downloaded_file.txt
+
+   # Verify the downloaded file
+   cat downloaded_file.txt
    ```
+
+### Troubleshooting
+
+If you encounter issues with file upload or download:
+
+1. **Check MinIO Logs**:
+   ```bash
+   docker-compose logs -f minio
+   ```
+
+2. **Verify MinIO Bucket**:
+   ```bash
+   docker exec -it we-upload-minio-1 sh -c "mkdir -p /data/we-upload-local"
+   ```
+
+3. **Restart the Service**:
+   ```bash
+   docker-compose restart api
+   ```
+
+4. **Hostname Resolution**:
+   If you see "Could not resolve host: minio" errors, this is because your local machine can't resolve the Docker hostname. The API has been updated to replace 'minio:9000' with 'localhost:9000' in the presigned URLs, but if you still have issues, try:
+   ```bash
+   # Restart the API service
+   docker-compose restart api
+
+   # Or manually replace the hostname in the URL
+   FIXED_URL=$(echo $UPLOAD_URL | sed 's/minio:9000/localhost:9000/g')
+   echo "Fixed URL: $FIXED_URL"
+   ```
+
+For more detailed troubleshooting information, see the `docs/status.md` file.
 
 ### Cleanup
 
@@ -197,6 +274,57 @@ docker-compose down -v
 ## Deployment
 
 This project uses Terraform to provision infrastructure on AWS and GitHub Actions for CI/CD. See the `docs/implementation_plan.md` for detailed instructions on each phase of deployment.
+
+## Following the Implementation Plan
+
+The project includes a comprehensive implementation plan in `docs/implementation_plan.md` that breaks down the development process into four phases:
+
+1. **Phase 1: Local Development**
+   - Set up the FastAPI application structure
+   - Implement database models and integrations
+   - Create file upload/download endpoints
+   - Configure Docker for local development
+
+2. **Phase 2: AWS & Terraform Setup**
+   - Configure AWS account and IAM permissions
+   - Build core infrastructure with Terraform
+   - Set up database and compute resources
+   - Integrate S3 for file storage
+
+3. **Phase 3: CI/CD with GitHub Actions**
+   - Implement automated testing
+   - Create CI workflows for code quality
+   - Set up deployment automation
+
+4. **Phase 4: Monitoring & Observability**
+   - Configure CloudWatch logging and metrics
+   - Implement health checks and alerting
+   - Optimize performance within Free Tier limits
+
+To implement the project, follow these steps:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/yourusername/we-upload.git
+cd we-upload
+
+# 2. Read the implementation plan
+cat docs/implementation_plan.md
+
+# 3. Start with Phase 1 (Local Development)
+# Create the directory structure first
+mkdir -p app/{core,db,dependencies,models,routers,schemas,services,utils}
+mkdir -p tests
+
+# 4. Implement each section progressively
+# Track your progress in docs/status.md
+touch docs/status.md
+
+# 5. Use docker-compose for local testing
+docker-compose up -d
+```
+
+Each phase builds upon the previous one, allowing you to incrementally develop and test the application. The implementation plan includes learning objectives for each step to help you understand the architectural decisions and technologies used.
 
 ## AWS Free Tier Utilization
 
