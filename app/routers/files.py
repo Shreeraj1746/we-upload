@@ -95,10 +95,15 @@ def list_files(
         A list of files owned by the user.
     """
     file_service = FileService(db)
-    files = file_service.get_multi_by_owner(
-        owner_id=uuid.UUID(str(current_user.id)), skip=skip, limit=limit
-    )
-    return [File.model_validate(file) for file in files]
+    # Convert UUID to string to match database column type
+    owner_id_str = str(current_user.id)
+    try:
+        files = file_service.get_multi_by_owner(owner_id=owner_id_str, skip=skip, limit=limit)
+        return [File.model_validate(file) for file in files]
+    except Exception as e:
+        # Add error logging
+        print(f"Error listing files: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to list files: {e}")
 
 
 @router.get("/{file_id}", response_model=File)

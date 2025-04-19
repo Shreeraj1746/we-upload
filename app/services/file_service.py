@@ -31,23 +31,41 @@ class FileService:
             db: Database session.
         """
         self.db = db
-        self.s3_client = boto3.client(
-            "s3",
-            region_name=settings.AWS_REGION,
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        )
 
-    def get(self, id: uuid.UUID) -> FileModel | None:
+        # Configure S3 client
+        # For local development with MinIO, we need to set the endpoint_url
+        if settings.DEBUG:
+            # Local development with MinIO
+            self.s3_client = boto3.client(
+                "s3",
+                region_name=settings.AWS_REGION,
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                endpoint_url="http://minio:9000",  # MinIO service in docker-compose
+                # Use path-style instead of virtual-hosted style (required for MinIO)
+                config=boto3.session.Config(s3={"addressing_style": "path"}),
+            )
+        else:
+            # Production AWS
+            self.s3_client = boto3.client(
+                "s3",
+                region_name=settings.AWS_REGION,
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            )
+
+    def get(self, id: uuid.UUID | str) -> FileModel | None:
         """Get a file by ID.
 
         Args:
-            id: File ID.
+            id: File ID (can be UUID or string).
 
         Returns:
             The file with the given ID or None if not found.
         """
-        return self.db.query(FileModel).filter(FileModel.id == id).first()
+        # Convert ID to string to match database column type
+        file_id = str(id) if isinstance(id, uuid.UUID) else id
+        return self.db.query(FileModel).filter(FileModel.id == file_id).first()
 
     def get_multi(self, skip: int = 0, limit: int = 100) -> list[FileModel]:
         """Get multiple files.
@@ -62,38 +80,43 @@ class FileService:
         return self.db.query(FileModel).offset(skip).limit(limit).all()
 
     def get_multi_by_owner(
-        self, owner_id: uuid.UUID, skip: int = 0, limit: int = 100
+        self, owner_id: uuid.UUID | str, skip: int = 0, limit: int = 100
     ) -> list[FileModel]:
         """Get multiple files by owner.
 
         Args:
-            owner_id: Owner's ID.
+            owner_id: Owner's ID (can be UUID or string).
             skip: Number of records to skip.
             limit: Maximum number of records to return.
 
         Returns:
             A list of files owned by the specified user.
         """
+        # Convert UUID to string if it's a UUID object
+        owner_id_str = str(owner_id) if isinstance(owner_id, uuid.UUID) else owner_id
+
         return (
             self.db.query(FileModel)
-            .filter(FileModel.owner_id == owner_id)
+            .filter(FileModel.owner_id == owner_id_str)
             .offset(skip)
             .limit(limit)
             .all()
         )
 
-    def create(self, obj_in: FileCreate, owner_id: uuid.UUID) -> FileModel:
+    def create(self, obj_in: FileCreate, owner_id: uuid.UUID | str) -> FileModel:
         """Create a new file metadata record.
 
         Args:
             obj_in: File creation data.
-            owner_id: ID of the file owner.
+            owner_id: ID of the file owner (can be UUID or string).
 
         Returns:
             The created file metadata record.
         """
         file_id = uuid.uuid4()
-        s3_key = f"{owner_id}/{file_id}/{obj_in.filename}"
+        # Ensure owner_id is a string
+        owner_id_str = str(owner_id)
+        s3_key = f"{owner_id_str}/{file_id}/{obj_in.filename}"
 
         db_obj = FileModel(
             id=str(file_id),
@@ -103,7 +126,7 @@ class FileService:
             size_bytes=obj_in.size_bytes,
             description=obj_in.description,
             is_public=obj_in.is_public,
-            owner_id=str(owner_id),
+            owner_id=owner_id_str,
         )
         self.db.add(db_obj)
         self.db.commit()
@@ -134,14 +157,14 @@ class FileService:
         self.db.refresh(db_obj)
         return db_obj
 
-    def remove(self, id: uuid.UUID) -> FileModel | None:
+    def remove(self, id: uuid.UUID | str) -> FileModel | None:
         """Remove a file.
 
         This removes both the file metadata from the database and
         the actual file from S3.
 
         Args:
-            id: ID of the file to remove.
+            id: ID of the file to remove (can be UUID or string).
 
         Returns:
             The removed file metadata record or None if not found.
@@ -149,7 +172,9 @@ class FileService:
         Raises:
             Exception: If there's an error deleting the file from S3.
         """
-        file_obj = self.db.query(FileModel).filter(FileModel.id == id).first()
+        # Convert ID to string to match database column type
+        file_id = str(id) if isinstance(id, uuid.UUID) else id
+        file_obj = self.db.query(FileModel).filter(FileModel.id == file_id).first()
         if not file_obj:
             return None
 
@@ -182,7 +207,8 @@ class FileService:
             Exception: If there's an error generating the presigned URL.
         """
         # Create file metadata
-        file_obj = self.create(obj_in=file_info, owner_id=uuid.UUID(str(user.id)))
+        # Pass the user.id directly as a string to avoid type conversion issues
+        file_obj = self.create(obj_in=file_info, owner_id=user.id)
 
         # Generate presigned URL for upload
         try:
@@ -195,6 +221,12 @@ class FileService:
                 },
                 ExpiresIn=settings.PRESIGNED_URL_EXPIRY,
             )
+
+            # For local development, replace 'minio' hostname with 'localhost'
+            # This is necessary because the client machine can't resolve the Docker hostname
+            if settings.DEBUG and "minio:9000" in upload_url:
+                upload_url = upload_url.replace("minio:9000", "localhost:9000")
+
             return FileUploadResponse(
                 upload_url=upload_url,
                 file_id=uuid.UUID(str(file_obj.id)),
@@ -239,6 +271,12 @@ class FileService:
                 },
                 ExpiresIn=settings.PRESIGNED_URL_EXPIRY,
             )
+
+            # For local development, replace 'minio' hostname with 'localhost'
+            # This is necessary because the client machine can't resolve the Docker hostname
+            if settings.DEBUG and "minio:9000" in download_url:
+                download_url = download_url.replace("minio:9000", "localhost:9000")
+
             return FileDownloadResponse(
                 download_url=download_url,
                 filename=str(file_obj.filename),
