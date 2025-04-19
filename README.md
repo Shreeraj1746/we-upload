@@ -301,30 +301,27 @@ The project includes a comprehensive implementation plan in `docs/implementation
    - Implement health checks and alerting
    - Optimize performance within Free Tier limits
 
-To implement the project, follow these steps:
+Each phase builds upon the previous one, allowing you to incrementally develop and test the application. The implementation plan includes learning objectives for each step to help you understand the architectural decisions and technologies used.
+
+## Learning Terraform with Checkpoint Branch
+
+If you're starting your journey to learn Terraform, you can use the `checkpoint_2025_04_19` branch as a starting point:
 
 ```bash
-# 1. Clone the repository
+# Clone the repository
 git clone https://github.com/yourusername/we-upload.git
 cd we-upload
 
-# 2. Read the implementation plan
-cat docs/implementation_plan.md
+# Switch to the checkpoint branch
+git checkout checkpoint_2025_04_19
 
-# 3. Start with Phase 1 (Local Development)
-# Create the directory structure first
-mkdir -p app/{core,db,dependencies,models,routers,schemas,services,utils}
-mkdir -p tests
-
-# 4. Implement each section progressively
-# Track your progress in docs/status.md
-touch docs/status.md
-
-# 5. Use docker-compose for local testing
+# Start the local development environment
 docker-compose up -d
 ```
 
-Each phase builds upon the previous one, allowing you to incrementally develop and test the application. The implementation plan includes learning objectives for each step to help you understand the architectural decisions and technologies used.
+This branch has the local setup working correctly, with all Phase 1 tasks completed. You should be able to run all commands in the "Testing API Endpoints" section above.
+
+From here, you can follow [Phase 2 of the implementation plan](docs/implementation_plan.md#phase-2-aws--terraform-setup) to learn and implement infrastructure as code with Terraform. This provides a hands-on approach to learning AWS resource provisioning while building on a functional application.
 
 ## AWS Free Tier Utilization
 
