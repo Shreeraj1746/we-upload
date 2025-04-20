@@ -51,10 +51,14 @@ async def startup_event() -> None:
 if __name__ == "__main__":
     import uvicorn
 
+    # Uvicorn is an ASGI server implementation that serves as the interface between
+    # our FastAPI application and HTTP clients. It handles HTTP connections, request parsing,
+    # and response delivery with high performance. We use it here to run our application
+    # directly when this file is executed as a script.
     uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=settings.DEBUG,
-        log_level="info",
+        "app.main:app",  # Path to the app object in the format "module:attribute"
+        host="0.0.0.0",  # Bind to all network interfaces
+        port=8000,  # Port to listen on
+        reload=settings.DEBUG,  # Auto-reload on code changes when in debug mode
+        log_level="info",  # Set logging verbosity
     )

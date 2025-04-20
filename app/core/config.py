@@ -1,6 +1,5 @@
 """Application configuration settings module."""
 
-
 from pydantic import AnyHttpUrl, PostgresDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -35,11 +34,13 @@ class Settings(BaseSettings):
         Returns:
             List of CORS origins or the original value if it's already a list.
         """
-        if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
-        elif isinstance(v, list | str):
-            return v
-        raise ValueError(v)
+        try:
+            if isinstance(v, str) and not v.startswith("["):
+                return [i.strip() for i in v.split(",")]
+            elif isinstance(v, list | str):
+                return v
+        except Exception:
+            raise ValueError(v)
 
     # Database settings
     POSTGRES_SERVER: str = "db"  # Default to docker-compose service name
