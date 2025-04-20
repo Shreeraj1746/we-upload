@@ -45,6 +45,8 @@
   - Added comprehensive development guide (docs/development.md)
   - Enhanced error handling with virtual environment checks
   - Upgraded project to use Python 3.13
+- Documentation expanded:
+  - Created FastAPI guide explaining how FastAPI works in this project (docs/fastapi_guide.md)
 
 ## Recently Completed
 - Fixed authentication mechanism
@@ -54,6 +56,7 @@
 - Fixed hostname resolution issue in presigned URLs
 - Fixed UUID type handling in database queries
 - Fixed file download functionality
+- Added FastAPI guide documentation explaining project structure and implementation
 
 ## Known Issues and Troubleshooting
 
