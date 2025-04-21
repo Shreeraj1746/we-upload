@@ -11,11 +11,6 @@
 - User authentication system implemented
 - File upload/download endpoints implemented via presigned URLs
 - Database models and relationships established
-- Terraform modules created:
-  - VPC with public and private subnets
-  - S3 for file storage
-  - EC2 for API deployment (t2.micro for free tier)
-  - RDS PostgreSQL for database (db.t3.micro for free tier)
 - CI with GitHub Actions:
   - Comprehensive CI workflow with linting, testing, and Docker build stages
   - Terraform validation integrated in CI pipeline
@@ -47,6 +42,7 @@
   - Upgraded project to use Python 3.13
 - Documentation expanded:
   - Created FastAPI guide explaining how FastAPI works in this project (docs/fastapi_guide.md)
+  - Created Pydantic guide explaining data validation and schema management (docs/pydantic_guide.md)
 
 ## Recently Completed
 - Fixed authentication mechanism
@@ -57,6 +53,7 @@
 - Fixed UUID type handling in database queries
 - Fixed file download functionality
 - Added FastAPI guide documentation explaining project structure and implementation
+- Added Pydantic guide explaining data validation, SQLAlchemy integration, and schema design
 
 ## Known Issues and Troubleshooting
 
@@ -159,7 +156,6 @@
 - Database models and schemas creation
 - API endpoints implementation
 - Docker and Docker Compose setup
-- Terraform module creation
 - GitHub Actions workflow setup
 - Pre-commit hooks installation and configuration
 - System architecture diagram creation and documentation

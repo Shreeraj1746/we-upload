@@ -5,7 +5,7 @@ remote_state {
   config = {
     bucket         = "${get_env("TF_STATE_BUCKET", "we-upload-terraform-state")}"
     key            = "${path_relative_to_include()}/terraform.tfstate"
-    region         = "us-east-1"
+    region         = "ap-south-1"
     encrypt        = true
     dynamodb_table = "we-upload-terraform-locks"
   }

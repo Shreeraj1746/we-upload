@@ -3,7 +3,7 @@
 # Common variables
 TF_STATE_BUCKET ?= we-upload-terraform-state
 TF_LOCK_TABLE ?= we-upload-terraform-locks
-AWS_REGION ?= us-east-1
+AWS_REGION ?= ap-south-1
 
 # Init scripts
 init: init-terragrunt
@@ -60,7 +60,7 @@ help:
 	@echo "Environment variables:"
 	@echo "  TF_STATE_BUCKET - S3 bucket for Terraform state (default: we-upload-terraform-state)"
 	@echo "  TF_LOCK_TABLE   - DynamoDB table for Terraform locks (default: we-upload-terraform-locks)"
-	@echo "  AWS_REGION      - AWS region (default: us-east-1)"
+	@echo "  AWS_REGION      - AWS region (default: ap-south-1)"
 
 # Default target
 .DEFAULT_GOAL := help

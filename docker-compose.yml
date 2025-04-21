@@ -19,7 +19,7 @@ services:
       - WE_UPLOAD_FIRST_SUPERUSER=admin@example.com
       - WE_UPLOAD_FIRST_SUPERUSER_PASSWORD=admin
       - WE_UPLOAD_S3_BUCKET_NAME=we-upload-local
-      - WE_UPLOAD_AWS_REGION=us-east-1
+      - WE_UPLOAD_AWS_REGION=ap-south-1
       - WE_UPLOAD_AWS_ACCESS_KEY_ID=minio
       - WE_UPLOAD_AWS_SECRET_ACCESS_KEY=minio123
     depends_on:
