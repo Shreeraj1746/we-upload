@@ -75,7 +75,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
 
     # AWS settings
-    AWS_REGION: str = "us-east-1"
+    AWS_REGION: str = "ap-south-1"
     AWS_ACCESS_KEY_ID: str = "minio"  # Default for local MinIO
     AWS_SECRET_ACCESS_KEY: str = "minio123"  # Default for local MinIO
     S3_BUCKET_NAME: str = "we-upload-local"  # Default bucket name

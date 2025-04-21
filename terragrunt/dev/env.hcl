@@ -1,6 +1,6 @@
 locals {
   env         = "dev"
-  aws_region  = "us-east-1"
+  aws_region  = "ap-south-11"
 
   # VPC configuration
   vpc_cidr_block            = "10.0.0.0/16"

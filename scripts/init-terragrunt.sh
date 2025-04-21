@@ -6,11 +6,11 @@ set -e
 # Configuration
 TF_STATE_BUCKET="${TF_STATE_BUCKET:-we-upload-terraform-state}"
 TF_LOCK_TABLE="${TF_LOCK_TABLE:-we-upload-terraform-locks}"
-AWS_REGION="${AWS_REGION:-us-east-1}"
+AWS_REGION="${AWS_REGION:-ap-south-11}"
 
 echo "Creating Terraform state bucket: $TF_STATE_BUCKET"
-# us-east-1 doesn't need LocationConstraint
-if [ "$AWS_REGION" = "us-east-1" ]; then
+# ap-south-11 doesn't need LocationConstraint
+if [ "$AWS_REGION" = "ap-south-11" ]; then
     aws s3api create-bucket \
         --bucket "$TF_STATE_BUCKET" \
         --region "$AWS_REGION"
