@@ -45,3 +45,23 @@ variable "expiration_days" {
   type        = number
   default     = 365
 }
+
+variable "db_password" {
+  description = "Password for the database instance"
+  type        = string
+  sensitive   = true
+}
+
+variable "ssh_public_key_path" {
+  description = "Path to the SSH public key file"
+  type        = string
+  default     = "~/.ssh/id_rsa.pub"
+}
+
+
+
+variable "db_name" {
+  description = "Name of the database"
+  type        = string
+  default     = "weupload"
+}

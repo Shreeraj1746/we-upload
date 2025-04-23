@@ -21,7 +21,7 @@ variable "ec2_role_name" {
 variable "ami_id" {
   description = "AMI ID for the EC2 instance"
   type        = string
-  default     = "ami-0261755bbcb8c4a84" # Ubuntu 20.04 LTS in ap-south-1
+  default     = "ami-03f4878755434977f" # Ubuntu 22.04 LTS in ap-south-1
 }
 
 variable "ssh_key_name" {

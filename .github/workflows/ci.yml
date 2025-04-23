@@ -91,6 +91,12 @@ jobs:
           WE_UPLOAD_SECRET_KEY: test-secret-key
           WE_UPLOAD_S3_BUCKET_NAME: test-bucket
 
+      - name: Run terraform plan
+        run: |
+          cd terraform/environments/dev
+          terraform init
+          terraform plan -detailed-exitcode
+
   build:
     name: Build Docker Image
     runs-on: ubuntu-latest

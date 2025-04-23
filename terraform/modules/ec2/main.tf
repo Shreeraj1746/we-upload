@@ -46,17 +46,18 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 }
 
 resource "aws_instance" "api_server" {
-  ami                    = var.ami_id
-  instance_type          = "t2.micro" # Free tier eligible
-  subnet_id              = var.public_subnet_id
-  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
-  key_name               = var.ssh_key_name
-  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
+  ami                         = var.ami_id
+  instance_type               = "t2.micro" # Free tier eligible
+  subnet_id                   = var.public_subnet_id
+  vpc_security_group_ids      = [aws_security_group.ec2_sg.id]
+  key_name                    = var.ssh_key_name
+  iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
+  associate_public_ip_address = true
 
   user_data = <<-EOF
               #!/bin/bash
               echo "Hello from We-Upload API server!"
-              apt-get update
+              apt-get update -y
               apt-get install -y docker.io
               systemctl start docker
               systemctl enable docker

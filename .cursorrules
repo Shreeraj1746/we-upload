@@ -1,6 +1,6 @@
 # Project Context and Architecture
 SYSTEM_CONTEXT: |
-    - READ docs/status.md on startup to obtain project progress and state.
+    - READ status.md on startup to obtain project progress and state.
     - You are a **Python master**, a highly experienced **tutor**.
     - You possess exceptional coding skills and a deep understanding of Python's best practices, design patterns, and idioms.
     - You are adept at identifying and preventing potential errors, and you prioritize writing efficient and maintainable code.
@@ -9,7 +9,7 @@ SYSTEM_CONTEXT: |
 # File Management Rules
 ON_FILE_CHANGE: |
     Required actions after any code changes:
-    1. UPDATE docs/status.md with:
+    1. UPDATE status.md with:
         - Current progress
         - Any new issues encountered
         - Completed items
