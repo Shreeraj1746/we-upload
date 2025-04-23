@@ -6,16 +6,25 @@ This directory contains the Terraform configuration for deploying the We-Upload 
 
 ```
 terraform/
-├── main.tf                # Main Terraform configuration
-├── provider.tf            # AWS provider configuration
-├── variables.tf           # Root module variables
-├── outputs.tf             # Root module outputs
 ├── modules/               # Reusable Terraform modules
 │   ├── vpc/               # VPC module
 │   ├── s3/                # S3 bucket module
+│   ├── ec2/               # EC2 instance module
+│   ├── rds/               # RDS database module
 │   └── iam/               # IAM roles and policies module
-└── environments/          # Environment-specific configurations
-    └── dev/               # Development environment
+├── environments/          # Environment-specific configurations
+│   ├── dev/               # Development environment
+│   │   ├── main.tf        # Main configuration for dev
+│   │   ├── variables.tf   # Variables specific to dev
+│   │   ├── outputs.tf     # Outputs specific to dev
+│   │   └── terraform.tfvars # Variable values for dev
+│   └── prod/              # Production environment
+│       ├── main.tf        # Main configuration for prod
+│       ├── variables.tf   # Variables specific to prod
+│       ├── outputs.tf     # Outputs specific to prod
+│       └── terraform.tfvars # Variable values for prod
+├── deploy.sh              # Deployment script
+└── cleanup.sh             # Cleanup script
 ```
 
 ## Modules
@@ -24,7 +33,7 @@ terraform/
 Creates a Virtual Private Cloud (VPC) with:
 - Public and private subnets across multiple availability zones
 - Internet Gateway for public subnet access
-- NAT Gateway for private subnet outbound access
+- NAT Gateway for private subnet outbound access (can be disabled)
 - Route tables for network traffic management
 
 ### S3 Module
@@ -32,6 +41,18 @@ Sets up S3 bucket for file storage with:
 - Proper access controls
 - Security configurations
 - Lifecycle policies
+
+### EC2 Module
+Provisions EC2 instances with:
+- Appropriate security groups
+- IAM instance profile
+- User data for bootstrap configuration
+
+### RDS Module
+Sets up RDS PostgreSQL database with:
+- Proper subnet groups
+- Security groups
+- Parameter groups
 
 ### IAM Module
 Configures necessary IAM roles and policies for:
@@ -72,9 +93,23 @@ This implementation takes specific measures to keep costs at $0:
 
 ### Deploy Infrastructure
 
+You can use the provided deployment script:
+
+```
+# Deploy to development environment (default)
+./deploy.sh
+
+# Deploy to production environment
+./deploy.sh prod
+```
+
+Or manually:
+
 1. Navigate to the environment directory you want to deploy:
    ```
-   cd terraform/environments/dev
+   cd terraform/environments/dev    # For development environment
+   # OR
+   cd terraform/environments/prod   # For production environment
    ```
 
 2. Initialize Terraform:
@@ -94,6 +129,35 @@ This implementation takes specific measures to keep costs at $0:
 
    When prompted, type "yes" to confirm the deployment.
 
+### Creating a New Environment
+
+To create a new environment (e.g., staging, testing):
+
+1. Create a new directory under `environments/`:
+   ```
+   mkdir -p terraform/environments/staging
+   ```
+
+2. Copy the basic configuration files from an existing environment:
+   ```
+   cp terraform/environments/dev/{main.tf,variables.tf,outputs.tf} terraform/environments/staging/
+   ```
+
+3. Create a new `terraform.tfvars` file with environment-specific values:
+   ```
+   touch terraform/environments/staging/terraform.tfvars
+   ```
+
+4. Edit the `terraform.tfvars` file to set environment-specific values:
+   ```
+   environment = "staging"
+   # Set other environment-specific variables here
+   ```
+
+5. Customize `main.tf` as needed for the new environment.
+
+6. Follow the standard deployment instructions for the new environment.
+
 ### Verify Infrastructure
 
 After successful deployment, you can verify the resources using AWS CLI or Terraform output:
@@ -106,7 +170,7 @@ After successful deployment, you can verify the resources using AWS CLI or Terra
 2. Verify VPC and network components:
    ```
    aws ec2 describe-vpcs --vpc-ids $(terraform output -raw vpc_id)
-   aws ec2 describe-subnets --filters "Name=vpc-id,Values=$(terraform output -raw vpc_id)"
+   aws ec2 describe-subnets --filters "Name=vpc-id,Values=$(terraform output -raw vpc_id"
    aws ec2 describe-route-tables --filters "Name=vpc-id,Values=$(terraform output -raw vpc_id)"
    ```
 
@@ -124,19 +188,94 @@ After successful deployment, you can verify the resources using AWS CLI or Terra
 
 ### Clean Up Resources
 
-To avoid incurring AWS charges, it's important to clean up resources when they're no longer needed:
+You can use the provided cleanup script:
 
-1. Run the destroy command:
+```
+# Clean up development environment (default)
+./cleanup.sh
+
+# Clean up production environment
+./cleanup.sh prod
+```
+
+Or manually:
+
+1. Navigate to the environment directory:
+   ```
+   cd terraform/environments/dev    # For development environment
+   ```
+
+2. Run the destroy command:
    ```
    terraform destroy
    ```
 
-2. Review the resources that will be destroyed and type "yes" when prompted to confirm.
+3. Review the resources that will be destroyed and type "yes" when prompted to confirm.
 
-3. Verify that all resources have been properly destroyed:
+4. Verify that all resources have been properly destroyed:
    ```
    terraform output
    ```
+
+## Remote State Management
+
+Each environment manages its own state file. For collaboration and backup, it's recommended to configure remote state storage:
+
+### Setting Up Remote State
+
+1. Create an S3 bucket for storing Terraform state:
+   ```
+   aws s3api create-bucket \
+       --bucket we-upload-terraform-state \
+       --region ap-south-1 \
+       --create-bucket-configuration LocationConstraint=ap-south-1
+   ```
+
+2. Enable versioning and encryption:
+   ```
+   aws s3api put-bucket-versioning \
+       --bucket we-upload-terraform-state \
+       --versioning-configuration Status=Enabled
+
+   aws s3api put-bucket-encryption \
+       --bucket we-upload-terraform-state \
+       --server-side-encryption-configuration '{"Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]}'
+   ```
+
+3. Create a DynamoDB table for state locking:
+   ```
+   aws dynamodb create-table \
+       --table-name we-upload-terraform-locks \
+       --attribute-definitions AttributeName=LockID,AttributeType=S \
+       --key-schema AttributeName=LockID,KeyType=HASH \
+       --billing-mode PAY_PER_REQUEST \
+       --region ap-south-1
+   ```
+
+4. Add the following to each environment's `main.tf` file:
+   ```hcl
+   terraform {
+     backend "s3" {
+       bucket         = "we-upload-terraform-state"
+       key            = "environments/<environment>/terraform.tfstate" # e.g., "environments/dev/terraform.tfstate"
+       region         = "ap-south-1"
+       dynamodb_table = "we-upload-terraform-locks"
+       encrypt        = true
+     }
+   }
+   ```
+
+5. Replace `<environment>` with the specific environment name (e.g., "dev", "prod").
+
+6. Initialize Terraform with the backend configuration:
+   ```
+   terraform init
+   ```
+
+This setup ensures:
+- State is securely stored in S3 with encryption
+- State locking to prevent concurrent modifications
+- Version history for the state files
 
 ## Testing EC2 and RDS Resources
 
@@ -148,6 +287,7 @@ After deploying the infrastructure, you can test that the EC2 instance and RDS P
    ```
    ssh -i /path/to/private/key ec2-user@$(terraform output -raw ec2_instance_public_ip)
    ```
+   Note: You can also connect to the EC2 instance via Session Manager if you don't have a ssh_key.
 
 2. Verify Docker is installed and running:
    ```
@@ -163,7 +303,14 @@ After deploying the infrastructure, you can test that the EC2 instance and RDS P
    sudo apt-get install -y postgresql-client
    ```
 
-2. Connect to the RDS instance:
+2. Install Terraform:
+   ```
+   wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+   echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+   sudo apt update && sudo apt install terraform
+   ```
+
+3. Connect to the RDS instance:
    ```
    psql -h $(terraform output -raw rds_endpoint | cut -f1 -d:) \
         -p $(terraform output -raw rds_endpoint | cut -f2 -d:) \
@@ -171,14 +318,14 @@ After deploying the infrastructure, you can test that the EC2 instance and RDS P
         -d weupload
    ```
 
-3. When prompted, enter the database password you specified in the Terraform variables.
+4. When prompted, enter the database password you specified in the Terraform variables.
 
-4. Test the PostgreSQL connection with:
+5. Test the PostgreSQL connection with:
    ```
    SELECT version();
    ```
 
-5. Exit the PostgreSQL client:
+6. Exit the PostgreSQL client:
    ```
    \q
    ```

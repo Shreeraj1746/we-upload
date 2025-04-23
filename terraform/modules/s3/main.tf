@@ -105,6 +105,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "uploads" {
     id     = "cleanup-old-versions"
     status = "Enabled"
 
+    filter {
+      prefix = "" # Apply to all objects
+    }
+
     noncurrent_version_expiration {
       noncurrent_days = 30
     }
