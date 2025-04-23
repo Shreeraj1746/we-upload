@@ -91,6 +91,11 @@ jobs:
           WE_UPLOAD_SECRET_KEY: test-secret-key
           WE_UPLOAD_S3_BUCKET_NAME: test-bucket
 
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
+
       - name: Run terraform plan
         run: |
           cd terraform/environments/dev
