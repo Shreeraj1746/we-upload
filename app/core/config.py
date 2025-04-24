@@ -43,10 +43,10 @@ class Settings(BaseSettings):
             raise ValueError(v)
 
     # Database settings
-    POSTGRES_SERVER: str = "db"  # Default to docker-compose service name
+    POSTGRES_SERVER: str = "localhost"  # Default to local PostgreSQL
     POSTGRES_USER: str = "postgres"  # Default values
     POSTGRES_PASSWORD: str = "postgres"
-    POSTGRES_DB: str = "we_upload"
+    POSTGRES_DB: str = "weupload"
     POSTGRES_PORT: str = "5432"
     SQLALCHEMY_DATABASE_URI: PostgresDsn | None = None
 
@@ -67,19 +67,28 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return v
 
-        # Return hardcoded connection string for local development
-        return "postgresql://postgres:postgres@db:5432/we_upload"
+        # Use class default variables to build the connection string
+        # This avoids circular references to the settings instance
+        user = cls.POSTGRES_USER.__get_default()  # noqa: SLF001
+        password = cls.POSTGRES_PASSWORD.__get_default()  # noqa: SLF001
+        host = cls.POSTGRES_SERVER.__get_default()  # noqa: SLF001
+        port = cls.POSTGRES_PORT.__get_default()  # noqa: SLF001
+        db = cls.POSTGRES_DB.__get_default()  # noqa: SLF001
+
+        return f"postgresql://{user}:{password}@{host}:{port}/{db}"
 
     # JWT settings
     SECRET_KEY: str = "supersecretkey"  # Default value for development
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
 
     # AWS settings
-    AWS_REGION: str = "ap-south-1"
+    AWS_REGION: str = "ap-south-1"  # Default to ap-south-1 for all environments
     AWS_ACCESS_KEY_ID: str = "minio"  # Default for local MinIO
     AWS_SECRET_ACCESS_KEY: str = "minio123"  # Default for local MinIO
     S3_BUCKET_NAME: str = "we-upload-local"  # Default bucket name
     PRESIGNED_URL_EXPIRY: int = 3600  # 1 hour
+    # Set to true to use EC2 instance role instead of access keys in production
+    USE_INSTANCE_ROLE: bool = True
 
     # User settings
     FIRST_SUPERUSER: str | None = None

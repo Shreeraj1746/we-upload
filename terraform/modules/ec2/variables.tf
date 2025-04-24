@@ -28,3 +28,37 @@ variable "ssh_key_name" {
   description = "Name of the SSH key pair for EC2 instance"
   type        = string
 }
+
+variable "aws_region" {
+  description = "AWS region for resources"
+  type        = string
+  default     = "ap-south-1"
+}
+
+variable "s3_bucket_name" {
+  description = "Name of the S3 bucket for file storage"
+  type        = string
+}
+
+variable "db_host" {
+  description = "PostgreSQL database host"
+  type        = string
+}
+
+variable "db_username" {
+  description = "PostgreSQL database username"
+  type        = string
+  default     = "postgres"
+}
+
+variable "db_password" {
+  description = "PostgreSQL database password"
+  type        = string
+  sensitive   = true
+}
+
+variable "db_name" {
+  description = "PostgreSQL database name"
+  type        = string
+  default     = "we_upload"
+}

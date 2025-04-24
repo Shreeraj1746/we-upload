@@ -33,7 +33,6 @@ class FileService:
         self.db = db
 
         # Configure S3 client
-        # For local development with MinIO, we need to set the endpoint_url
         if settings.DEBUG:
             # Local development with MinIO
             self.s3_client = boto3.client(
@@ -45,14 +44,43 @@ class FileService:
                 # Use path-style instead of virtual-hosted style (required for MinIO)
                 config=boto3.session.Config(s3={"addressing_style": "path"}),
             )
+            self.s3_bucket_name = settings.S3_BUCKET_NAME
+            self.is_local_dev = True
         else:
-            # Production AWS
-            self.s3_client = boto3.client(
-                "s3",
-                region_name=settings.AWS_REGION,
-                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            # Production AWS configuration
+            # Create a configuration with signature version 4, required for all regions
+            s3_config = boto3.session.Config(
+                signature_version="s3v4", region_name=settings.AWS_REGION
             )
+
+            # In production, if USE_INSTANCE_ROLE is True, don't pass explicit credentials
+            # This allows boto3 to use the EC2 instance role or environment variables
+            if settings.USE_INSTANCE_ROLE:
+                self.s3_client = boto3.client(
+                    "s3", region_name=settings.AWS_REGION, config=s3_config
+                )
+            else:  # noqa: PLR5501
+                # Otherwise, use the provided credentials (for testing or non-EC2 environments)
+                # Skip MinIO default credentials
+                if (
+                    settings.AWS_ACCESS_KEY_ID != "minio"
+                    and settings.AWS_SECRET_ACCESS_KEY != "minio123"  # noqa: S105
+                ):
+                    self.s3_client = boto3.client(
+                        "s3",
+                        region_name=settings.AWS_REGION,
+                        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                        config=s3_config,
+                    )
+                else:
+                    # Fallback without credentials - boto3 will check environment variables and instance role
+                    self.s3_client = boto3.client(
+                        "s3", region_name=settings.AWS_REGION, config=s3_config
+                    )
+
+            self.s3_bucket_name = settings.S3_BUCKET_NAME
+            self.is_local_dev = False
 
     def get(self, id: uuid.UUID | str) -> FileModel | None:
         """Get a file by ID.
@@ -181,7 +209,7 @@ class FileService:
         # Delete file from S3
         try:
             self.s3_client.delete_object(
-                Bucket=settings.S3_BUCKET_NAME,
+                Bucket=self.s3_bucket_name,
                 Key=file_obj.s3_key,
             )
         except ClientError as e:
@@ -212,19 +240,22 @@ class FileService:
 
         # Generate presigned URL for upload
         try:
+            params = {
+                "Bucket": self.s3_bucket_name,
+                "Key": file_obj.s3_key,
+                "ContentType": file_info.content_type,
+            }
+
+            # Generate the presigned URL for upload
             upload_url = self.s3_client.generate_presigned_url(
                 "put_object",
-                Params={
-                    "Bucket": settings.S3_BUCKET_NAME,
-                    "Key": file_obj.s3_key,
-                    "ContentType": file_info.content_type,
-                },
+                Params=params,
                 ExpiresIn=settings.PRESIGNED_URL_EXPIRY,
             )
 
             # For local development, replace 'minio' hostname with 'localhost'
             # This is necessary because the client machine can't resolve the Docker hostname
-            if settings.DEBUG and "minio:9000" in upload_url:
+            if self.is_local_dev and "minio:9000" in upload_url:
                 upload_url = upload_url.replace("minio:9000", "localhost:9000")
 
             return FileUploadResponse(
@@ -263,18 +294,21 @@ class FileService:
 
         # Generate presigned URL for download
         try:
+            params = {
+                "Bucket": self.s3_bucket_name,
+                "Key": file_obj.s3_key,
+            }
+
+            # Generate the presigned URL for download
             download_url = self.s3_client.generate_presigned_url(
                 "get_object",
-                Params={
-                    "Bucket": settings.S3_BUCKET_NAME,
-                    "Key": file_obj.s3_key,
-                },
+                Params=params,
                 ExpiresIn=settings.PRESIGNED_URL_EXPIRY,
             )
 
             # For local development, replace 'minio' hostname with 'localhost'
             # This is necessary because the client machine can't resolve the Docker hostname
-            if settings.DEBUG and "minio:9000" in download_url:
+            if self.is_local_dev and "minio:9000" in download_url:
                 download_url = download_url.replace("minio:9000", "localhost:9000")
 
             return FileDownloadResponse(
