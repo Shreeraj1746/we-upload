@@ -7,7 +7,7 @@ name = "we-upload"
 version = "0.1.0"
 description = "Multi-User File Upload & Sharing Backend with FastAPI"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
     {name = "We-Upload Team"}

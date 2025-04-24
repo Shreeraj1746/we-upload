@@ -69,6 +69,14 @@ module "ec2" {
   ec2_role_name    = module.iam.ec2_role_name
   ssh_key_name     = aws_key_pair.ssh_key.key_name
 
+  # Additional variables for user data
+  aws_region     = var.aws_region
+  s3_bucket_name = module.s3.s3_bucket_name
+  db_host        = module.rds.db_endpoint
+  db_username    = module.rds.db_username
+  db_password    = var.db_password
+  db_name        = module.rds.db_name
+
   # For additional production-specific configurations,
   # extend the EC2 module to accept these parameters
 }
