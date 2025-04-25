@@ -82,7 +82,7 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Run unit tests
-        run: pytest --cov=app --exclude-dir=tests/test_e2e_upload_download.py --exclude-dir=tests/test_basic_file_api.py
+        run: pytest --cov=app tests/ --ignore=tests/test_e2e_upload_download.py --ignore=tests/test_basic_file_api.py
         env:
           WE_UPLOAD_POSTGRES_SERVER: localhost
           WE_UPLOAD_POSTGRES_USER: postgres
