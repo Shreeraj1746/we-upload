@@ -430,13 +430,13 @@ rds_endpoint = "we-upload-db.cr6k82agk5wq.ap-south-1.rds.amazonaws.com:5432"
    curl http://<EC2_IP>/health
 
    # Expected response:
-   # {"status":"ok","timestamp":"2025-04-24T03:32:15.123456"}
+   # {"status":"ok","service":"we-upload-api"}
 
    # Check database connection
    curl http://<EC2_IP>/health/db
 
    # Expected response:
-   # {"status":"ok","message":"Database connection successful"}
+   # {"status":"ok","database":"connected"}
    ```
 
 2. **Authentication**:
@@ -461,11 +461,24 @@ rds_endpoint = "we-upload-db.cr6k82agk5wq.ap-south-1.rds.amazonaws.com:5432"
 
    # Get a presigned URL for uploading
    # (replace <EC2_IP> with your EC2 instance's public IP)
-   UPLOAD_RESPONSE=$(curl -s -X 'POST' "http://<EC2_IP>/api/v1/files/upload" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"filename": "aws_test.txt", "content_type": "text/plain", "size_bytes": 42, "description": "Test file for AWS deployment", "is_public": true}')
+   UPLOAD_RESPONSE=$(curl -s -X 'POST' "http://<EC2_IP>/api/v1/files/upload" \
+     -H "Authorization: Bearer $TOKEN" \
+     -H 'Content-Type: application/json' \
+     -d '{
+       "filename": "aws_test.txt",
+       "content_type": "text/plain",
+       "size_bytes": 42,
+       "description": "Test file for AWS deployment",
+       "is_public": true
+     }')
 
-   # Extract the upload URL and file ID (requires jq)
-   # If you don't have jq, you can manually copy these values from the response
-   UPLOAD_URL=$(echo $UPLOAD_RESPONSE | grep -o 'https://[^"]*')
+   # Extract the upload URL and file ID
+   # If you have jq installed:
+   # UPLOAD_URL=$(echo $UPLOAD_RESPONSE | jq -r '.upload_url')
+   # FILE_ID=$(echo $UPLOAD_RESPONSE | jq -r '.file_id')
+
+   # If you don't have jq, use these grep commands instead:
+   UPLOAD_URL=$(echo $UPLOAD_RESPONSE | grep -o '"upload_url":"[^"]*"' | cut -d'"' -f4)
    FILE_ID=$(echo $UPLOAD_RESPONSE | grep -o '"file_id":"[^"]*"' | cut -d'"' -f4)
 
    echo "Upload URL: $UPLOAD_URL"
@@ -476,8 +489,6 @@ rds_endpoint = "we-upload-db.cr6k82agk5wq.ap-south-1.rds.amazonaws.com:5432"
      -H 'Content-Type: text/plain' \
      --data-binary @aws_test.txt
    ```
-
-   Note: If the upload fails with an error about signature version or region, apply the fixes from the Troubleshooting section.
 
 4. **List Files**:
 
@@ -495,8 +506,12 @@ rds_endpoint = "we-upload-db.cr6k82agk5wq.ap-south-1.rds.amazonaws.com:5432"
    DOWNLOAD_RESPONSE=$(curl -s -X 'GET' "http://<EC2_IP>/api/v1/files/download/$FILE_ID" \
      -H "Authorization: Bearer $TOKEN")
 
-   # Extract the download URL (requires jq)
-   DOWNLOAD_URL=$(echo "$DOWNLOAD_RESPONSE" | jq -r '.download_url')
+   # Extract the download URL
+   # If you have jq installed:
+   # DOWNLOAD_URL=$(echo "$DOWNLOAD_RESPONSE" | jq -r '.download_url')
+
+   # If you don't have jq, use this grep command instead:
+   DOWNLOAD_URL=$(echo "$DOWNLOAD_RESPONSE" | grep -o '"download_url":"[^"]*"' | cut -d'"' -f4)
 
    echo "Download URL: $DOWNLOAD_URL"
 
@@ -505,14 +520,6 @@ rds_endpoint = "we-upload-db.cr6k82agk5wq.ap-south-1.rds.amazonaws.com:5432"
 
    # Verify the downloaded file
    cat downloaded_aws_file.txt
-   ```
-
-6. **Verify File Data**:
-
-   ```bash
-   # Verify the file metadata
-   curl -X 'GET' "http://<EC2_IP>/api/v1/files/$FILE_ID" \
-     -H "Authorization: Bearer $TOKEN"
    ```
 
 ### Troubleshooting AWS Deployment
@@ -554,11 +561,13 @@ If you encounter issues with file upload or download in AWS:
    # Install and configure PostgreSQL
    sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib
    sudo -u postgres psql -c "CREATE DATABASE weupload;"
-   sudo -u postgres psql -c "CREATE USER weuploadadmin WITH PASSWORD 'admin';"
+   sudo -u postgres psql -c "CREATE USER weuploadadmin WITH PASSWORD 'Password123!';"
    sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE weupload TO weuploadadmin;"
 
    # Update environment variables
    echo "WE_UPLOAD_POSTGRES_SERVER=localhost" | sudo tee -a /app/.env
+   echo "WE_UPLOAD_POSTGRES_USER=weuploadadmin" | sudo tee -a /app/.env
+   echo "WE_UPLOAD_POSTGRES_PASSWORD=Password123!" | sudo tee -a /app/.env
 
    # Restart the application
    sudo systemctl restart weupload
@@ -623,9 +632,13 @@ If you encounter issues with file upload or download in AWS:
        "is_public": true
      }')
 
-   # Extract the upload URL and file ID (requires jq)
-   # If you don't have jq, you can manually copy these values from the response
-   UPLOAD_URL=$(echo $UPLOAD_RESPONSE | grep -o 'https://[^"]*')
+   # Extract the upload URL and file ID
+   # If you have jq installed:
+   # UPLOAD_URL=$(echo $UPLOAD_RESPONSE | jq -r '.upload_url')
+   # FILE_ID=$(echo $UPLOAD_RESPONSE | jq -r '.file_id')
+
+   # If you don't have jq, use these grep commands instead:
+   UPLOAD_URL=$(echo $UPLOAD_RESPONSE | grep -o '"upload_url":"[^"]*"' | cut -d'"' -f4)
    FILE_ID=$(echo $UPLOAD_RESPONSE | grep -o '"file_id":"[^"]*"' | cut -d'"' -f4)
 
    echo "Upload URL: $UPLOAD_URL"
@@ -655,8 +668,182 @@ If you encounter issues with file upload or download in AWS:
    DOWNLOAD_RESPONSE=$(curl -s -X 'GET' "http://<EC2_IP>/api/v1/files/download/$FILE_ID" \
      -H "Authorization: Bearer $TOKEN")
 
-   # Extract the download URL (requires jq)
-   DOWNLOAD_URL=$(echo "$DOWNLOAD_RESPONSE" | jq -r '.download_url')
+   # Extract the download URL
+   # If you have jq installed:
+   # DOWNLOAD_URL=$(echo "$DOWNLOAD_RESPONSE" | jq -r '.download_url')
+
+   # If you don't have jq, use this grep command instead:
+   DOWNLOAD_URL=$(echo "$DOWNLOAD_RESPONSE" | grep -o '"download_url":"[^"]*"' | cut -d'"' -f4)
+
+   echo "Download URL: $DOWNLOAD_URL"
+
+   # Download the file
+   curl -X 'GET' "$DOWNLOAD_URL" -o downloaded_aws_file.txt
+
+   # Verify the downloaded file
+   cat downloaded_aws_file.txt
+   ```
+
+8. **Verify File Data**:
+
+   ```bash
+   # Verify the file metadata
+   curl -X 'GET' "http://<EC2_IP>/api/v1/files/$FILE_ID" \
+     -H "Authorization: Bearer $TOKEN"
+   ```
+
+### Troubleshooting AWS Deployment
+
+If you encounter issues with file upload or download in AWS:
+
+1. **Application Initialization Issues**:
+
+   ```bash
+   # If you get 502 Bad Gateway errors, the application may still be initializing.
+   # Wait 5-10 minutes after deployment, then try again.
+
+   # To check the status of the application directly:
+   ssh -i ~/.ssh/id_rsa ubuntu@<EC2_IP>
+
+   # Once logged in, check Docker container status:
+   cd /app
+   sudo docker-compose ps
+
+   # Check application logs:
+   sudo docker-compose logs api
+   ```
+
+2. **502 Bad Gateway Errors**:
+   If you encounter "502 Bad Gateway" errors from nginx after the initialization period, it might be due to:
+   - **Database Connection Issues**: The default config had a hardcoded connection to "db" hostname, which works for local Docker Compose but not for EC2. We now install PostgreSQL locally on the EC2 instance.
+   - **Circular Reference in Config**: There was a circular reference in settings initialization. We've fixed this by using default values directly.
+
+   To manually fix these issues:
+
+   ```bash
+   # SSH into your EC2 instance
+   ssh -i ~/.ssh/id_rsa ubuntu@<EC2_IP>
+
+   # Fix database connection in config.py
+   sudo sed -i 's|return "postgresql://postgres:postgres@db:5432/we_upload"|return f"postgresql://{user}:{password}@localhost:{port}/{db}"|' /app/app/core/config.py
+   sudo sed -i 's/POSTGRES_SERVER: str = "db"/POSTGRES_SERVER: str = "localhost"/' /app/app/core/config.py
+
+   # Install and configure PostgreSQL
+   sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib
+   sudo -u postgres psql -c "CREATE DATABASE weupload;"
+   sudo -u postgres psql -c "CREATE USER weuploadadmin WITH PASSWORD 'Password123!';"
+   sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE weupload TO weuploadadmin;"
+
+   # Update environment variables
+   echo "WE_UPLOAD_POSTGRES_SERVER=localhost" | sudo tee -a /app/.env
+   echo "WE_UPLOAD_POSTGRES_USER=weuploadadmin" | sudo tee -a /app/.env
+   echo "WE_UPLOAD_POSTGRES_PASSWORD=Password123!" | sudo tee -a /app/.env
+
+   # Restart the application
+   sudo systemctl restart weupload
+   ```
+
+3. **Check EC2 Initialization**:
+
+   ```bash
+   # SSH into the EC2 instance
+   ssh -i ~/.ssh/id_rsa ubuntu@<EC2_IP>
+
+   # Check the cloud-init log to see if initialization completed:
+   sudo cat /var/log/cloud-init-output.log
+   ```
+
+4. **S3 Region and Credentials Issues**:
+   If you encounter S3 upload/download errors like "Error parsing the X-Amz-Credential parameter" or "NoSuchBucket", it might be due to:
+   - **S3 Region Mismatch**: The application might be configured with a different region than where your S3 bucket is located.
+   - **MinIO Credentials Used in AWS**: The default configuration uses MinIO credentials which don't work in AWS.
+   - **S3 Bucket Name Mismatch**: The application might be configured with the wrong S3 bucket name.
+
+   To fix these issues:
+
+   ```bash
+   # SSH into your EC2 instance
+   ssh -i ~/.ssh/id_rsa ubuntu@<EC2_IP>
+
+   # Check and update AWS region to match the bucket region (usually ap-south-1)
+   grep WE_UPLOAD_AWS_REGION /app/.env
+   sudo sed -i 's/WE_UPLOAD_AWS_REGION=wrong-region/WE_UPLOAD_AWS_REGION=ap-south-1/g' /app/.env
+
+   # Remove explicit AWS credentials to use EC2 instance role instead
+   sudo sed -i '/WE_UPLOAD_AWS_ACCESS_KEY_ID=/d' /app/.env
+   sudo sed -i '/WE_UPLOAD_AWS_SECRET_ACCESS_KEY=/d' /app/.env
+
+   # Update S3 bucket name if needed (check the Terraform output for actual name)
+   sudo sed -i 's/WE_UPLOAD_S3_BUCKET_NAME=wrong-bucket-name/WE_UPLOAD_S3_BUCKET_NAME=correct-bucket-name/g' /app/.env
+
+   # Modify the S3 client configuration to use the instance role
+   sudo python3 -c "f=open('/app/app/services/file_service.py', 'r'); content=f.read(); f.close(); content=content.replace('        else:\\n            # Production AWS\\n            self.s3_client = boto3.client(\\n                \\\"s3\\\",\\n                region_name=settings.AWS_REGION,\\n                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,\\n                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,\\n            )', '        else:\\n            # Production AWS\\n            self.s3_client = boto3.client(\\n                \\\"s3\\\",\\n                region_name=settings.AWS_REGION,\\n                config=boto3.session.Config(signature_version=\\\"s3v4\\\"),\\n            )'); f=open('/app/app/services/file_service.py', 'w'); f.write(content); f.close(); print('File updated with signature_version parameter')"
+
+   # Restart the application
+   sudo systemctl restart weupload
+   ```
+
+5. **Upload a File**:
+
+   ```bash
+   # First, create a sample test file
+   echo "This is a test file for AWS deployment" > aws_test.txt
+
+   # Get a presigned URL for uploading
+   # (replace <EC2_IP> with your EC2 instance's public IP)
+   UPLOAD_RESPONSE=$(curl -s -X 'POST' "http://<EC2_IP>/api/v1/files/upload" \
+     -H "Authorization: Bearer $TOKEN" \
+     -H 'Content-Type: application/json' \
+     -d '{
+       "filename": "aws_test.txt",
+       "content_type": "text/plain",
+       "size_bytes": 42,
+       "description": "Test file for AWS deployment",
+       "is_public": true
+     }')
+
+   # Extract the upload URL and file ID
+   # If you have jq installed:
+   # UPLOAD_URL=$(echo $UPLOAD_RESPONSE | jq -r '.upload_url')
+   # FILE_ID=$(echo $UPLOAD_RESPONSE | jq -r '.file_id')
+
+   # If you don't have jq, use these grep commands instead:
+   UPLOAD_URL=$(echo $UPLOAD_RESPONSE | grep -o '"upload_url":"[^"]*"' | cut -d'"' -f4)
+   FILE_ID=$(echo $UPLOAD_RESPONSE | grep -o '"file_id":"[^"]*"' | cut -d'"' -f4)
+
+   echo "Upload URL: $UPLOAD_URL"
+   echo "File ID: $FILE_ID"
+
+   # Upload the file using the presigned URL
+   curl -X 'PUT' "$UPLOAD_URL" \
+     -H 'Content-Type: text/plain' \
+     --data-binary @aws_test.txt
+   ```
+
+   Note: If the upload fails with an error about signature version or region, apply the fixes from the Troubleshooting section.
+
+6. **List Files**:
+
+   ```bash
+   # Get a list of all files
+   curl -X 'GET' "http://<EC2_IP>/api/v1/files" \
+     -H "Authorization: Bearer $TOKEN"
+   ```
+
+7. **Download a File**:
+
+   ```bash
+   # Get a presigned URL for downloading
+   # Use the FILE_ID from the upload step
+   DOWNLOAD_RESPONSE=$(curl -s -X 'GET' "http://<EC2_IP>/api/v1/files/download/$FILE_ID" \
+     -H "Authorization: Bearer $TOKEN")
+
+   # Extract the download URL
+   # If you have jq installed:
+   # DOWNLOAD_URL=$(echo "$DOWNLOAD_RESPONSE" | jq -r '.download_url')
+
+   # If you don't have jq, use this grep command instead:
+   DOWNLOAD_URL=$(echo "$DOWNLOAD_RESPONSE" | grep -o '"download_url":"[^"]*"' | cut -d'"' -f4)
 
    echo "Download URL: $DOWNLOAD_URL"
 
