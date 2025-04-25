@@ -69,9 +69,6 @@ resource "aws_instance" "api_server" {
               git clone https://github.com/Shreeraj1746/we-upload.git /app
               cd /app
 
-              # Fix Python version requirement in pyproject.toml
-              sed -i 's/requires-python = ">=3.13"/requires-python = ">=3.10"/' /app/pyproject.toml
-
               # Fix config.py to avoid circular reference
               CONFIG_FILE="/app/app/core/config.py"
               sed -i 's|return "postgresql://postgres:postgres@db:5432/we_upload"|return "postgresql://\$\{POSTGRES_USER\}:\$\{POSTGRES_PASSWORD\}@\$\{POSTGRES_SERVER\}:\$\{POSTGRES_PORT\}/\$\{POSTGRES_DB\}"|' $CONFIG_FILE
@@ -103,7 +100,7 @@ resource "aws_instance" "api_server" {
               WE_UPLOAD_POSTGRES_PASSWORD=${var.db_password}
               WE_UPLOAD_POSTGRES_DB=${var.db_name}
               WE_UPLOAD_FIRST_SUPERUSER=admin@example.com
-              WE_UPLOAD_FIRST_SUPERUSER_PASSWORD=changeme123
+              WE_UPLOAD_FIRST_SUPERUSER_PASSWORD=admin
               WE_UPLOAD_SECRET_KEY=$(openssl rand -base64 32)
               EOL
 

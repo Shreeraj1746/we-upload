@@ -87,10 +87,9 @@ ignore = [
     "TRY300", # Consider moving to else block
     "TRY301", # Abstract raise to inner function
     "TRY400", # Use logging.exception
-    # No longer needed with Python 3.13
-    # "UP007",  # Use X | Y for Union types in Python 3.10+
-    # "UP038",  # Use X | Y in isinstance
-    # "FA100",  # Missing from __future__ import annotations
+    "UP007",  # Use X | Y for Union types in Python 3.10+
+    "UP038",  # Use X | Y in isinstance
+    "FA100",  # Missing from __future__ import annotations
     # Formatter conflict rules
     "COM812", # Missing trailing comma
     "ISC001", # Implicit string concatenation

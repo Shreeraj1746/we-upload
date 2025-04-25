@@ -72,7 +72,7 @@ class Settings(BaseSettings):
         password = "postgres"  # noqa: S105
         host = "db"  # Using 'db' hostname for Docker Compose setup
         port = "5432"
-        db = "we_upload"  # Match the name in docker-compose.yml
+        db = "weupload"  # Match the name in docker-compose.yml
 
         return f"postgresql://{user}:{password}@{host}:{port}/{db}"
 
