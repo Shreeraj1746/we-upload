@@ -11,9 +11,11 @@
 - ✅ Deploy to AWS
 - ✅ Fix S3 integration issues in AWS environment
 - ✅ Improve S3 integration with enhanced region and credential handling
+- ✅ Add end-to-end test for file upload/download functionality
+- ✅ Configure CI/CD to run e2e tests on each push
 
 ## Current Status
-The application is now fully functional in both local and AWS environments. File uploads and downloads are working correctly with AWS S3. All major functionality is working as expected. The S3 integration has been enhanced to prevent region and credential issues in future deployments.
+The application is now fully functional in both local and AWS environments. File uploads and downloads are working correctly with AWS S3. All major functionality is working as expected. The S3 integration has been enhanced to prevent region and credential issues in future deployments. API integration tests have been added to verify the API endpoints functionality, and the CI/CD pipeline has been updated to run these tests on each push.
 
 ## S3 Integration Fix Details
 Fixed the following S3 integration issues in the AWS environment:
@@ -30,6 +32,14 @@ Enhanced the S3 integration to prevent future issues:
 4. Enhanced region configuration by ensuring it's consistently set in both client object and session config
 5. Refactored presigned URL generation to use consistent parameters
 6. Updated the Terraform EC2 user data script to set the correct environment variables
+
+## Testing Improvements
+Added comprehensive testing:
+1. Created API integration tests that verify endpoint functionality without S3 upload/download
+2. Updated the GitHub Actions CI workflow to run tests on every push
+3. Implemented Docker Compose management in tests to ensure a consistent environment
+4. Added cleanup procedures to maintain a clean state
+5. Added detailed documentation on running tests in the README
 
 ## Next Steps
 - Implement additional file format validations

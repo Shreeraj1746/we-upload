@@ -9,7 +9,6 @@ A robust, scalable backend system for file uploading and sharing, built with Fas
 - **Metadata Management**: Store and retrieve file metadata
 - **Cloud-Native Architecture**: Deployed on AWS (staying within Free Tier limits)
 - **Fully Automated CI/CD**: Using GitHub Actions for testing, building, and deployment
-- **Modern Python**: Leverages Python 3.13's latest features and type hinting
 
 ## Repository Structure
 
@@ -51,7 +50,7 @@ A robust, scalable backend system for file uploading and sharing, built with Fas
 
 ### Prerequisites
 
-- Python 3.13 or higher
+- Python 3.10 or higher
 - Docker and Docker Compose
 - Terraform (for infrastructure deployment)
 
@@ -76,6 +75,49 @@ docker-compose up -d
 # API will be available at http://localhost:8000
 # Documentation at http://localhost:8000/docs
 ```
+
+## Running Tests
+
+The project includes comprehensive testing to ensure functionality:
+
+### Unit Tests
+
+Unit tests verify individual components of the application without external dependencies:
+
+```bash
+# Activate your virtual environment
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Run unit tests
+pytest --cov=app --exclude-dir=tests/test_basic_file_api.py
+```
+
+### API Integration Tests
+
+API integration tests verify that the application's endpoints work correctly with a real database and S3 storage:
+
+```bash
+# Activate your virtual environment
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Run API integration tests
+# This will automatically spin up Docker Compose with all required services
+pytest tests/test_basic_file_api.py -v
+```
+
+The integration tests:
+- Automatically start Docker Compose with all services (API, PostgreSQL, MinIO)
+- Wait for all services to be healthy
+- Run tests against the API endpoints
+- Clean up after completion
+
+### CI/CD Pipeline
+
+Tests run automatically on every push to the repository via GitHub Actions:
+1. **Linting**: Code style and quality checks using ruff and pre-commit hooks
+2. **Unit Tests**: Core functionality tests
+3. **API Integration Tests**: End-to-end tests of the API functionality
+4. **Build**: Docker image build (on main branch only)
 
 ## Manual Testing
 
@@ -392,7 +434,7 @@ rds_endpoint = "we-upload-db.cr6k82agk5wq.ap-south-1.rds.amazonaws.com:5432"
    # (replace <EC2_IP> with your EC2 instance's public IP)
    curl -X 'POST' 'http://<EC2_IP>/login/access-token' \
      -H 'Content-Type: application/x-www-form-urlencoded' \
-     -d 'username=admin%40example.com&password=changeme123'
+     -d 'username=admin@example.com&password=admin'
 
    # The response will contain your access token
    # Copy the full token value from the response and set it as an environment variable:
@@ -484,7 +526,6 @@ If you encounter issues with file upload or download in AWS:
 
 2. **502 Bad Gateway Errors**:
    If you encounter "502 Bad Gateway" errors from nginx after the initialization period, it might be due to:
-   - **Python Version Mismatch**: The application requires Python 3.13 but EC2 instances typically have Python 3.10. We've updated the Terraform user_data to automatically modify this requirement.
    - **Database Connection Issues**: The default config had a hardcoded connection to "db" hostname, which works for local Docker Compose but not for EC2. We now install PostgreSQL locally on the EC2 instance.
    - **Circular Reference in Config**: There was a circular reference in settings initialization. We've fixed this by using default values directly.
 
@@ -494,9 +535,6 @@ If you encounter issues with file upload or download in AWS:
    # SSH into your EC2 instance
    ssh -i ~/.ssh/id_rsa ubuntu@<EC2_IP>
 
-   # Fix Python version requirement
-   sudo sed -i 's/requires-python = ">=3.13"/requires-python = ">=3.10"/' /app/pyproject.toml
-
    # Fix database connection in config.py
    sudo sed -i 's|return "postgresql://postgres:postgres@db:5432/we_upload"|return f"postgresql://{user}:{password}@localhost:{port}/{db}"|' /app/app/core/config.py
    sudo sed -i 's/POSTGRES_SERVER: str = "db"/POSTGRES_SERVER: str = "localhost"/' /app/app/core/config.py
@@ -504,7 +542,7 @@ If you encounter issues with file upload or download in AWS:
    # Install and configure PostgreSQL
    sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib
    sudo -u postgres psql -c "CREATE DATABASE weupload;"
-   sudo -u postgres psql -c "CREATE USER weuploadadmin WITH PASSWORD 'changeme123';"
+   sudo -u postgres psql -c "CREATE USER weuploadadmin WITH PASSWORD 'admin';"
    sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE weupload TO weuploadadmin;"
 
    # Update environment variables
