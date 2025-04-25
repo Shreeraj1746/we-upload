@@ -67,13 +67,12 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return v
 
-        # Use class default variables to build the connection string
-        # This avoids circular references to the settings instance
-        user = cls.POSTGRES_USER.__get_default()  # noqa: SLF001
-        password = cls.POSTGRES_PASSWORD.__get_default()  # noqa: SLF001
-        host = cls.POSTGRES_SERVER.__get_default()  # noqa: SLF001
-        port = cls.POSTGRES_PORT.__get_default()  # noqa: SLF001
-        db = cls.POSTGRES_DB.__get_default()  # noqa: SLF001
+        # Use hardcoded default values to avoid circular references
+        user = "postgres"
+        password = "postgres"  # noqa: S105
+        host = "db"  # Using 'db' hostname for Docker Compose setup
+        port = "5432"
+        db = "we_upload"  # Match the name in docker-compose.yml
 
         return f"postgresql://{user}:{password}@{host}:{port}/{db}"
 

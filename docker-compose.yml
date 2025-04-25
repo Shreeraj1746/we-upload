@@ -14,7 +14,7 @@ services:
       - WE_UPLOAD_POSTGRES_SERVER=db
       - WE_UPLOAD_POSTGRES_USER=postgres
       - WE_UPLOAD_POSTGRES_PASSWORD=postgres
-      - WE_UPLOAD_POSTGRES_DB=we_upload
+      - WE_UPLOAD_POSTGRES_DB=weupload
       - WE_UPLOAD_SECRET_KEY=supersecretkey
       - WE_UPLOAD_FIRST_SUPERUSER=admin@example.com
       - WE_UPLOAD_FIRST_SUPERUSER_PASSWORD=admin
