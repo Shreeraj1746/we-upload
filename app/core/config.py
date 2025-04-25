@@ -1,6 +1,6 @@
 """Application configuration settings module."""
 
-from pydantic import AnyHttpUrl, PostgresDsn, field_validator
+from pydantic import AnyHttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,58 +23,13 @@ class Settings(BaseSettings):
     # CORS settings
     BACKEND_CORS_ORIGINS: list[AnyHttpUrl] = []
 
-    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
-    @classmethod
-    def assemble_cors_origins(cls, v: str | list[str]) -> list[str] | str:
-        """Parse CORS origins from string.
-
-        Args:
-            v: The value to be validated.
-
-        Returns:
-            List of CORS origins or the original value if it's already a list.
-        """
-        try:
-            if isinstance(v, str) and not v.startswith("["):
-                return [i.strip() for i in v.split(",")]
-            elif isinstance(v, list | str):
-                return v
-        except Exception:
-            raise ValueError(v)
-
     # Database settings
-    POSTGRES_SERVER: str = "localhost"  # Default to local PostgreSQL
-    POSTGRES_USER: str = "postgres"  # Default values
-    POSTGRES_PASSWORD: str = "postgres"
+    POSTGRES_SERVER: str = "localhost"
+    POSTGRES_USER: str = "weuploadadmin"
+    POSTGRES_PASSWORD: str = "Password123!"
     POSTGRES_DB: str = "weupload"
     POSTGRES_PORT: str = "5432"
-    SQLALCHEMY_DATABASE_URI: PostgresDsn | None = None
-
-    @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
-    @classmethod
-    def assemble_db_connection(
-        cls,
-        v: PostgresDsn | str | None,
-    ) -> PostgresDsn | str | None:
-        """Assemble the database connection URI.
-
-        Args:
-            v: The value to be validated.
-
-        Returns:
-            Assembled PostgreSQL database URI.
-        """
-        if isinstance(v, str):
-            return v
-
-        # Use hardcoded default values to avoid circular references
-        user = "postgres"
-        password = "postgres"  # noqa: S105
-        host = "db"  # Using 'db' hostname for Docker Compose setup
-        port = "5432"
-        db = "weupload"  # Match the name in docker-compose.yml
-
-        return f"postgresql://{user}:{password}@{host}:{port}/{db}"
+    SQLALCHEMY_DATABASE_URI: str = "postgresql://weuploadadmin:Password123!@localhost:5432/weupload"
 
     # JWT settings
     SECRET_KEY: str = "supersecretkey"  # Default value for development
@@ -94,5 +49,5 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_PASSWORD: str | None = None
 
 
-# Create a global settings instance
+# Create settings instance
 settings = Settings()
