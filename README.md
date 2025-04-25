@@ -111,6 +111,18 @@ The integration tests:
 - Run tests against the API endpoints
 - Clean up after completion
 
+#### How the Integration Tests Work
+
+The integration tests utilize a custom pytest fixture called `docker_compose_up_down` located in `tests/conftest.py`. This fixture:
+
+1. Starts all Docker Compose services defined in your `docker-compose.yml` file
+2. Automatically detects whether to use the modern `docker compose` or legacy `docker-compose` command
+3. Waits for the API service to become available with health checks
+4. Yields control to the test functions to execute against the running services
+5. Automatically tears down all services after tests complete, even if tests fail
+
+This ensures a consistent and isolated environment for each test run, making the tests reliable and repeatable.
+
 ### CI/CD Pipeline
 
 Tests run automatically on every push to the repository via GitHub Actions:
