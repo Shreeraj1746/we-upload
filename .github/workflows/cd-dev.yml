@@ -1,0 +1,98 @@
+name: CD - Dev Environment Deployment
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  deploy-dev:
+    name: Deploy to Dev Environment
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    defaults:
+      run:
+        working-directory: terraform/environments/dev
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan.out
+        env:
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+          TF_VAR_ssh_public_key_path: dummy-path # Will be overridden in the next step
+
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
+          chmod 600 ~/.ssh/id_rsa.pub
+          sed -i 's|ssh_public_key_path = ".*"|ssh_public_key_path = "~/.ssh/id_rsa.pub"|' terraform.tfvars
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan.out
+
+      - name: Get EC2 Instance IP
+        id: get-ec2-ip
+        run: |
+          EC2_IP=$(terraform output -raw ec2_instance_public_ip)
+          echo "ec2_ip=$EC2_IP" >> $GITHUB_OUTPUT
+
+      - name: SSH into EC2 and deploy latest code
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.get-ec2-ip.outputs.ec2_ip }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /app
+            sudo git pull
+            source venv/bin/activate
+            pip install -e .
+            python -c "
+            try:
+              from app.db.base import Base
+              from app.db.session import engine
+              from alembic import command
+              from alembic.config import Config
+
+              # Run migrations if needed
+              alembic_cfg = Config('/app/alembic.ini')
+              command.upgrade(alembic_cfg, 'head')
+              print('Database migrations applied successfully')
+            except Exception as e:
+              print(f'Error applying migrations: {e}')
+            "
+            sudo systemctl restart weupload
+            echo "Deployment completed successfully"
+
+      - name: Update Status
+        run: |
+          cd ../../..
+          echo "## Latest Deployment" >> status.md
+          echo "- ✅ Deployed to DEV environment on $(date)" >> status.md
+          echo "- 🌐 Application URL: http://${{ steps.get-ec2-ip.outputs.ec2_ip }}" >> status.md

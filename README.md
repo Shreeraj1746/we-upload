@@ -130,6 +130,25 @@ Tests run automatically on every push to the repository via GitHub Actions:
 2. **Unit Tests**: Core functionality tests
 3. **API Integration Tests**: End-to-end tests of the API functionality
 4. **Build**: Docker image build (on main branch only)
+5. **Deployment**: Automatic deployment to the dev environment (on main branch only)
+
+#### CD Workflow
+
+The Continuous Deployment workflow (`cd-dev.yml`) automatically deploys the application to the dev environment when the CI workflow passes on the main branch. The workflow:
+
+1. **Infrastructure Management**: Uses Terraform to manage infrastructure for the dev environment
+2. **Deployment Automation**: Deploys the latest code to the EC2 instance using SSH
+3. **Database Migrations**: Applies any necessary database migrations
+4. **Status Updates**: Updates the status.md file with deployment information
+
+**Note**: The CD workflow deploys **only** to the dev environment, never to production.
+
+Required GitHub Actions secrets for CD:
+- `AWS_ACCESS_KEY_ID`: AWS access key with permissions to manage resources
+- `AWS_SECRET_ACCESS_KEY`: AWS secret key for authentication
+- `DB_PASSWORD`: Database password for the RDS instance
+- `SSH_PUBLIC_KEY`: SSH public key for EC2 instance access
+- `SSH_PRIVATE_KEY`: SSH private key for GitHub Actions to access the EC2 instance
 
 ## Manual Testing
 
