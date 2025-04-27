@@ -58,8 +58,6 @@ variable "ssh_public_key_path" {
   default     = "~/.ssh/id_rsa.pub"
 }
 
-
-
 variable "db_name" {
   description = "Name of the database"
   type        = string

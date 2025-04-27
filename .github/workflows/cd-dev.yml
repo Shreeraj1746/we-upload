@@ -40,18 +40,18 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      - name: Terraform Plan
-        run: terraform plan -out=tfplan.out
-        env:
-          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
-          TF_VAR_ssh_public_key_path: dummy-path # Will be overridden in the next step
-
       - name: Setup SSH Key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
           chmod 600 ~/.ssh/id_rsa.pub
           sed -i 's|ssh_public_key_path = ".*"|ssh_public_key_path = "~/.ssh/id_rsa.pub"|' terraform.tfvars
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan.out
+        env:
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan.out
