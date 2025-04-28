@@ -92,10 +92,13 @@ jobs:
           echo "=== Terraform Outputs ==="
           terraform output
 
-          # Try to get the IP using terraform output, but capture just the first line
-          EC2_IP=$(terraform output -raw ec2_instance_public_ip 2>/dev/null | head -n 1 || echo "")
+          # Store the terraform output in a variable for inspection
+          TERRAFORM_OUTPUT=$(terraform output)
+          echo "Terraform output captured: $TERRAFORM_OUTPUT"
 
-          echo "Found EC2 IP: $EC2_IP"
+          # Extract IP using grep from the terraform output
+          EC2_IP=$(echo "$TERRAFORM_OUTPUT" | grep "ec2_instance_public_ip" | cut -d "=" -f2 | xargs)
+          echo "Extracted EC2 IP: $EC2_IP"
 
           # Fail the build if IP is not found or empty
           if [ -z "$EC2_IP" ]; then
@@ -105,7 +108,11 @@ jobs:
             exit 1
           fi
 
+          # Store the EC2 IP in GITHUB_OUTPUT for use in later steps
           echo "ec2_ip=$EC2_IP" >> $GITHUB_OUTPUT
+
+          # Double-check the output to confirm we have the correct IP
+          echo "Final EC2 IP value that will be used: $EC2_IP"
 
       - name: SSH into EC2 and deploy latest code
         uses: appleboy/ssh-action@master
