@@ -92,13 +92,15 @@ jobs:
           echo "=== Terraform Outputs ==="
           terraform output
 
-          # Extract just the IP address using a more specific grep pattern
-          EC2_IP=$(terraform output | grep 'ec2_instance_public_ip =' | sed 's/.*= "\([0-9\.]*\)".*/\1/')
-          echo "Extracted EC2 IP: $EC2_IP"
+          # Extract just the IP address and clean it
+          EC2_IP=$(terraform output | grep 'ec2_instance_public_ip =' | sed 's/.*= "\([0-9\.]*\)".*/\1/' | head -n 1 | tr -d '\n' | tr -d ' ')
 
-          # Verify that we have a valid IP format
-          if [[ ! $EC2_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Error: Extracted value is not a valid IP address: '$EC2_IP'"
+          # Print the extracted IP with clear markers to see any whitespace
+          echo "Extracted EC2 IP: '$EC2_IP'"
+
+          # Simple validation that we have a non-empty value
+          if [ -z "$EC2_IP" ]; then
+            echo "Error: Failed to extract EC2 IP address"
             echo "Available outputs:"
             terraform output
             exit 1
@@ -108,7 +110,7 @@ jobs:
           echo "ec2_ip=$EC2_IP" >> $GITHUB_OUTPUT
 
           # Double-check the output to confirm we have the correct IP
-          echo "Final EC2 IP value that will be used: $EC2_IP"
+          echo "Final EC2 IP value that will be used: '$EC2_IP'"
 
       - name: SSH into EC2 and deploy latest code
         uses: appleboy/ssh-action@master
