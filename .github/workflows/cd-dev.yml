@@ -34,8 +34,22 @@ jobs:
         with:
           terraform_version: 1.5.7
 
+      - name: Create Backend Override
+        run: |
+          cat > backend_override.tf << EOF
+          terraform {
+            backend "s3" {
+              bucket         = "we-upload-terraform-state"
+              key            = "environments/dev/terraform.tfstate"
+              region         = "ap-south-1"
+              encrypt        = true
+              dynamodb_table = "dynamodb_table"
+            }
+          }
+          EOF
+
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -reconfigure
 
       - name: Terraform Validate
         run: terraform validate
@@ -45,26 +59,27 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
           chmod 600 ~/.ssh/id_rsa.pub
-
-          # Check if terraform.tfvars exists
+          # Check if terraform.tfvars exists and update it, or create it if it doesn't exist
           if [ -f terraform.tfvars ]; then
             sed -i 's|ssh_public_key_path = ".*"|ssh_public_key_path = "~/.ssh/id_rsa.pub"|' terraform.tfvars
           else
-            # Create terraform.tfvars if it doesn't exist
-            echo 'aws_region   = "ap-south-1"' > terraform.tfvars
-            echo 'project_name = "we-upload"' >> terraform.tfvars
-            echo 'environment  = "dev"' >> terraform.tfvars
-            echo 'ssh_public_key_path = "~/.ssh/id_rsa.pub"' >> terraform.tfvars
+            # Create a basic terraform.tfvars file with required values
+            cat > terraform.tfvars << 'EOF'
+          aws_region   = "ap-south-1"
+          project_name = "we-upload"
+          environment  = "dev"
+          ssh_public_key_path = "~/.ssh/id_rsa.pub"
+          EOF
           fi
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan.out
+        run: terraform plan -lock=false -out=tfplan.out
         env:
           TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
           TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan.out
+        run: terraform apply -lock=false -auto-approve tfplan.out
 
       - name: Get EC2 Instance IP
         id: get-ec2-ip
