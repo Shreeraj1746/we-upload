@@ -105,3 +105,14 @@ module "rds" {
   ec2_security_group_id = module.ec2.ec2_security_group_id
   db_password           = var.db_password
 }
+
+# CloudWatch Monitoring
+module "monitoring" {
+  source = "../../modules/monitoring"
+
+  app_name           = var.project_name
+  environment        = var.environment
+  instance_id        = module.ec2.ec2_instance_id
+  log_retention_days = 7    # Free tier friendly retention
+  sns_topic_arn      = null # No SNS topic for dev environment
+}

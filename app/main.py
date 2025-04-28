@@ -1,11 +1,18 @@
 """Main application module for the We-Upload API."""
 
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.core.logging import setup_logging
 from app.db.init_db import create_first_superuser, init_db
 from app.routers import files, health, login, users
+
+# Initialize logging first
+setup_logging()
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -40,12 +47,16 @@ async def startup_event() -> None:
     This function is called when the FastAPI application starts. It's used for
     initializing resources, database connections, and executing startup tasks.
     """
+    logger.info("Starting application initialization")
+
     # Initialize database and create tables if they don't exist
     init_db()
 
     # Create initial superuser if configured
     if settings.FIRST_SUPERUSER:
         create_first_superuser()
+
+    logger.info("Application initialization complete")
 
 
 if __name__ == "__main__":
