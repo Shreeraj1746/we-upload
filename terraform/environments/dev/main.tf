@@ -10,11 +10,12 @@ terraform {
 
   # configure for remote state
   backend "s3" {
-    bucket         = "we-upload-terraform-state"
-    key            = "environments/dev/terraform.tfstate" # Replace 'dev' with your environment name
-    region         = "ap-south-1"
-    dynamodb_table = "we-upload-terraform-locks"
-    encrypt        = true
+    bucket  = "we-upload-terraform-state"
+    key     = "environments/dev/terraform.tfstate" # Replace 'dev' with your environment name
+    region  = "ap-south-1"
+    encrypt = true
+    # Temporarily removing DynamoDB locking to fix state issues
+    # dynamodb_table = "we-upload-terraform-locks"
   }
 }
 

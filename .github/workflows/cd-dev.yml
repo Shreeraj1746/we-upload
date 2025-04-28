@@ -43,7 +43,8 @@ jobs:
               key            = "environments/dev/terraform.tfstate"
               region         = "ap-south-1"
               encrypt        = true
-              dynamodb_table = "dynamodb_table"
+              # Temporarily removing DynamoDB locking to fix state issues
+              # dynamodb_table = "dynamodb_table"
             }
           }
           EOF
@@ -87,7 +88,10 @@ jobs:
       - name: Get EC2 Instance IP
         id: get-ec2-ip
         run: |
-          EC2_IP=$(terraform output -raw ec2_instance_public_ip)
+          # Extract the IP address, ignoring any debug output
+          TERRAFORM_OUTPUT=$(terraform output)
+          EC2_IP=$(echo "$TERRAFORM_OUTPUT" | grep ec2_instance_public_ip | awk -F'= ' '{print $2}' | tr -d '"')
+          echo "Found EC2 IP: $EC2_IP"
           echo "ec2_ip=$EC2_IP" >> $GITHUB_OUTPUT
 
       - name: SSH into EC2 and deploy latest code
