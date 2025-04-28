@@ -88,11 +88,16 @@ jobs:
       - name: Get EC2 Instance IP
         id: get-ec2-ip
         run: |
-          # Extract the IP address, ignoring any debug output
-          TERRAFORM_OUTPUT=$(terraform output)
-          EC2_IP=$(echo "$TERRAFORM_OUTPUT" | grep ec2_instance_public_ip | awk -F'= ' '{print $2}' | tr -d '"')
+          # More reliable way to get the EC2 IP
+          EC2_IP=$(terraform output -json | jq -r '.ec2_instance_public_ip.value')
           echo "Found EC2 IP: $EC2_IP"
           echo "ec2_ip=$EC2_IP" >> $GITHUB_OUTPUT
+
+          # Fail the build if IP is not found or empty
+          if [ -z "$EC2_IP" ]; then
+            echo "Error: Failed to extract EC2 IP address"
+            exit 1
+          fi
 
       - name: SSH into EC2 and deploy latest code
         uses: appleboy/ssh-action@master
