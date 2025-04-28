@@ -23,8 +23,8 @@ terraform/
 │       ├── variables.tf   # Variables specific to prod
 │       ├── outputs.tf     # Outputs specific to prod
 │       └── terraform.tfvars # Variable values for prod
-├── state-managment/       # Resources for hosting remote state
-    ├── main.tf            # S3 and DynamoDB table for remote state
+└── state-management/      # Resources for hosting remote state
+    └── main.tf            # S3 and DynamoDB table for remote state
 ```
 
 ## Modules
@@ -95,7 +95,7 @@ This implementation takes specific measures to keep costs at $0:
 
 You can use the provided deployment script:
 
-```
+```bash
 # Deploy to development environment (default)
 ./deploy.sh
 
@@ -103,27 +103,25 @@ You can use the provided deployment script:
 ./deploy.sh prod
 ```
 
-Or manually:
+Or manually deploy:
 
-1. Navigate to the environment directory you want to deploy:
-   ```
+1. Navigate to the environment directory:
+   ```bash
    cd terraform/environments/dev    # For development environment
-   # OR
-   cd terraform/environments/prod   # For production environment
    ```
 
 2. Initialize Terraform:
-   ```
+   ```bash
    terraform init
    ```
 
-3. Plan changes to verify what resources will be created:
-   ```
+3. Plan changes:
+   ```bash
    terraform plan
    ```
 
-4. Apply changes to create the infrastructure:
-   ```
+4. Apply changes:
+   ```bash
    terraform apply
    ```
 
@@ -134,132 +132,86 @@ Or manually:
 To create a new environment (e.g., staging, testing):
 
 1. Create a new directory under `environments/`:
-   ```
+   ```bash
    mkdir -p terraform/environments/staging
    ```
 
 2. Copy the basic configuration files from an existing environment:
-   ```
+   ```bash
    cp terraform/environments/dev/{main.tf,variables.tf,outputs.tf} terraform/environments/staging/
    ```
 
 3. Create a new `terraform.tfvars` file with environment-specific values:
-   ```
+   ```bash
    touch terraform/environments/staging/terraform.tfvars
    ```
 
 4. Edit the `terraform.tfvars` file to set environment-specific values:
-   ```
+   ```hcl
    environment = "staging"
    # Set other environment-specific variables here
    ```
 
-5. Customize `main.tf` as needed for the new environment.
-
-6. Follow the standard deployment instructions for the new environment.
+5. Follow the standard deployment instructions for the new environment.
 
 ### Verify Infrastructure
 
-After successful deployment, you can verify the resources using AWS CLI or Terraform output:
+After deployment, verify the resources:
 
 1. View Terraform outputs:
-   ```
+   ```bash
    terraform output
    ```
 
-2. Verify VPC and network components:
-   ```
-   aws ec2 describe-vpcs --vpc-ids $(terraform output -raw vpc_id)
-   aws ec2 describe-subnets --filters "Name=vpc-id,Values=$(terraform output -raw vpc_id"
-   aws ec2 describe-route-tables --filters "Name=vpc-id,Values=$(terraform output -raw vpc_id)"
-   ```
+2. Check important resources:
+   ```bash
+   # EC2 instance
+   aws ec2 describe-instances --filters "Name=tag:Name,Values=we-upload-*" --query "Reservations[].Instances[].{ID:InstanceId,State:State.Name,IP:PublicIpAddress}"
 
-3. Verify S3 bucket:
-   ```
-   aws s3api get-bucket-encryption --bucket $(terraform output -raw s3_bucket_name)
-   aws s3api get-bucket-lifecycle-configuration --bucket $(terraform output -raw s3_bucket_name)
-   ```
+   # S3 bucket
+   aws s3api list-buckets --query "Buckets[?contains(Name, 'we-upload')].Name"
 
-4. Verify IAM roles and policies:
-   ```
-   aws iam get-role --role-name $(terraform output -raw ec2_role_name)
-   aws iam list-attached-role-policies --role-name $(terraform output -raw ec2_role_name)
+   # RDS instance
+   aws rds describe-db-instances --query "DBInstances[?contains(DBInstanceIdentifier, 'we-upload')].{ID:DBInstanceIdentifier,Status:DBInstanceStatus,Endpoint:Endpoint.Address}"
    ```
 
 ### Clean Up Resources
 
-You can use the provided cleanup script:
+To destroy all resources and avoid unexpected charges:
 
+```bash
+# Navigate to the environment directory
+cd terraform/environments/dev
+
+# Destroy all resources
+terraform destroy
+
+# Confirm by typing "yes" when prompted
 ```
-# Clean up development environment (default)
-./cleanup.sh
-
-# Clean up production environment
-./cleanup.sh prod
-```
-
-Or manually:
-
-1. Navigate to the environment directory:
-   ```
-   cd terraform/environments/dev    # For development environment
-   ```
-
-2. Run the destroy command:
-   ```
-   terraform destroy
-   ```
-
-3. Review the resources that will be destroyed and type "yes" when prompted to confirm.
-
-4. Verify that all resources have been properly destroyed:
-   ```
-   terraform output
-   ```
 
 ## Remote State Management
 
-Each environment manages its own state file. For collaboration and backup, it's recommended to configure remote state storage:
+For team collaboration, we use remote state storage in S3 with state locking in DynamoDB:
 
-### Setting Up Remote State Using Terraform
-
-Instead of manually creating the remote state infrastructure, you can use Terraform itself to create the necessary resources:
+### Setting Up Remote State
 
 1. Navigate to the state-management directory:
-   ```
+   ```bash
    cd terraform/state-management
    ```
 
-2. Initialize and apply the Terraform configuration:
-   ```
+2. Deploy the state management infrastructure:
+   ```bash
    terraform init
-   terraform plan
    terraform apply
    ```
 
-3. When prompted, type "yes" to confirm the deployment.
-
-This will create:
-- An S3 bucket named `we-upload-terraform-state` with versioning and encryption enabled
-- A DynamoDB table named `we-upload-terraform-locks` for state locking
-
-### Migrating From Local to Remote State
-
-Follow these steps to migrate your existing local state to remote state:
-
-1. First, ensure your state-management infrastructure is deployed (see above).
-
-2. For each environment you want to migrate, navigate to its directory:
-   ```
-   cd terraform/environments/dev    # Replace 'dev' with the environment you're migrating
-   ```
-
-3. Add the backend configuration to the environment's `main.tf` file:
+3. Add backend configuration to your environment:
    ```hcl
    terraform {
      backend "s3" {
        bucket         = "we-upload-terraform-state"
-       key            = "environments/dev/terraform.tfstate"  # Replace 'dev' with your environment name
+       key            = "environments/dev/terraform.tfstate"
        region         = "ap-south-1"
        dynamodb_table = "we-upload-terraform-locks"
        encrypt        = true
@@ -267,203 +219,64 @@ Follow these steps to migrate your existing local state to remote state:
    }
    ```
 
-4. Initialize Terraform with the new backend configuration:
-   ```
-   terraform init
-   ```
-
-5. When prompted with:
-   ```
-   Do you want to copy existing state to the new backend?
-     Pre-existing state was found while migrating the previous "local" backend to the
-     newly configured "s3" backend. No existing state was found in the newly
-     configured "s3" backend. Do you want to copy this state to the new "s3"
-     backend? Enter "yes" to copy and "no" to start with an empty state.
+4. Initialize with the new backend:
+   ```bash
+   terraform init -migrate-state
    ```
 
-   Type "yes" to migrate your local state to the remote backend.
+## Testing Resources
 
-6. Verify that your state has been migrated successfully:
-   ```
-   terraform state list
-   ```
-
-7. Perform a simple terraform plan to ensure everything is working correctly:
-   ```
-   terraform plan
-   ```
-
-8. Repeat steps 2-7 for each environment you need to migrate.
-
-### Handling State Migration Issues
-
-If you encounter problems during migration:
-
-1. **State Already Exists**: If state already exists in the remote backend:
-   ```
-   terraform state pull > terraform.tfstate.backup
-   ```
-   Then manually inspect both states and decide which to keep.
-
-2. **Backend Initialization Fails**: If initialization fails:
-   ```
-   terraform init -reconfigure
-   ```
-   This forces Terraform to reconfigure the backend without attempting to migrate state.
-
-3. **Rollback to Local State**: To revert to local state if needed:
-   - Remove the backend configuration from your `main.tf`
-   - Run `terraform init -migrate-state`
-   - When prompted, migrate from S3 back to local
-
-### Setting Up Remote State (Manual Method)
-
-As an alternative to using Terraform to create the infrastructure, you can manually create the resources:
-
-1. Create an S3 bucket for storing Terraform state:
-   ```
-   aws s3api create-bucket \
-       --bucket we-upload-terraform-state \
-       --region ap-south-1 \
-       --create-bucket-configuration LocationConstraint=ap-south-1
-   ```
-
-2. Enable versioning and encryption:
-   ```
-   aws s3api put-bucket-versioning \
-       --bucket we-upload-terraform-state \
-       --versioning-configuration Status=Enabled
-
-   aws s3api put-bucket-encryption \
-       --bucket we-upload-terraform-state \
-       --server-side-encryption-configuration '{"Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]}'
-   ```
-
-3. Create a DynamoDB table for state locking:
-   ```
-   aws dynamodb create-table \
-       --table-name we-upload-terraform-locks \
-       --attribute-definitions AttributeName=LockID,AttributeType=S \
-       --key-schema AttributeName=LockID,KeyType=HASH \
-       --billing-mode PAY_PER_REQUEST \
-       --region ap-south-1
-   ```
-
-4. Block public access to the S3 bucket:
-   ```
-   aws s3api put-public-access-block \
-       --bucket we-upload-terraform-state \
-       --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
-   ```
-
-5. Then continue with the migration steps from step 3 in the "Migrating From Local to Remote State" section above.
-
-This setup ensures:
-- State is securely stored in S3 with encryption
-- State locking to prevent concurrent modifications
-- Version history for the state files
-- No public access to your Terraform state
-- Multi-user collaboration capability
-
-### Working with Remote State
-
-Once your state is migrated to the remote backend:
-
-1. **Best Practices for Teams**:
-   - Always run `terraform plan` before applying changes
-   - Use Git to track your Terraform code
-   - Consider implementing a CI/CD pipeline for Terraform changes
-
-2. **Backing Up Remote State**:
-   The S3 bucket has versioning enabled, but you can also periodically download a backup:
-   ```
-   terraform state pull > terraform.tfstate.backup
-   ```
-
-3. **Removing an Environment from Remote State**:
-   If you need to completely remove an environment from remote state:
-   ```
-   aws s3 rm s3://we-upload-terraform-state/environments/environment-name/terraform.tfstate
-   ```
-   Replace 'environment-name' with the name of the environment to remove.
-
-## Testing EC2 and RDS Resources
-
-After deploying the infrastructure, you can test that the EC2 instance and RDS PostgreSQL instance are working correctly:
-
-#### Testing EC2 Instance
+### Testing EC2 Instance
 
 1. SSH into the EC2 instance:
+   ```bash
+   ssh -i ~/.ssh/your-key.pem ubuntu@$(terraform output -raw ec2_instance_public_ip)
    ```
-   ssh -i /path/to/private/key ec2-user@$(terraform output -raw ec2_instance_public_ip)
-   ```
-   Note: You can also connect to the EC2 instance via Session Manager if you don't have a ssh_key.
 
-2. Verify Docker is installed and running:
-   ```
+2. Check Docker status:
+   ```bash
    docker --version
    sudo systemctl status docker
    ```
 
-#### Testing RDS Instance from EC2
+### Testing RDS from EC2
 
-1. Install PostgreSQL client on the EC2 instance:
-   ```
+1. Install PostgreSQL client:
+   ```bash
    sudo apt-get update
    sudo apt-get install -y postgresql-client
    ```
 
-2. Install Terraform:
-   ```
-   wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-   echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-   sudo apt update && sudo apt install terraform
-   ```
-
-3. Connect to the RDS instance:
-   ```
+2. Connect to the database:
+   ```bash
    psql -h $(terraform output -raw rds_endpoint | cut -f1 -d:) \
         -p $(terraform output -raw rds_endpoint | cut -f2 -d:) \
         -U weuploadadmin \
         -d weupload
    ```
 
-4. When prompted, enter the database password you specified in the Terraform variables.
-
-5. Test the PostgreSQL connection with:
-   ```
+3. Test the connection:
+   ```sql
    SELECT version();
-   ```
-
-6. Exit the PostgreSQL client:
-   ```
    \q
    ```
 
-### Security Note
-
-This testing setup is for development purposes. In production, you should:
-1. Use more restrictive security groups
-2. Store database credentials in AWS Secrets Manager
-3. Implement proper encryption for all data in transit and at rest
-
 ## Troubleshooting
 
-Common issues and their solutions:
+If you encounter issues:
 
-1. **Error: NoCredentialProviders**
-   - Make sure AWS CLI is configured with proper credentials using `aws configure`
-   - Verify that your credentials have appropriate permissions
+1. **Error: No valid credential sources found**
+   - Run `aws configure` to set up AWS credentials
+   - Verify IAM permissions are correct
 
-2. **Error: Resource already exists**
-   - Resources with the same name might already exist in your AWS account
-   - Use the AWS console to check for existing resources or modify resource naming
+2. **Error: S3 bucket already exists**
+   - Check if the bucket name is globally unique
+   - Try a different bucket prefix in `terraform.tfvars`
 
-3. **Deployment takes too long or times out**
-   - Check your internet connection
-   - Some AWS resources (like S3 bucket lifecycle configurations) can take time to propagate
-   - Try running the operation again
+3. **RDS connection issues**
+   - Verify security group rules allow traffic from the EC2 instance
+   - Check if the instance is in the correct subnet
 
-4. **Error: Failed to destroy some resources**
-   - Some resources might have dependencies that were not tracked by Terraform
-   - Check the AWS console and manually delete any remaining resources
+4. **EC2 SSH access problems**
+   - Verify key pair is correctly specified
+   - Check security group rules for SSH access (port 22)
