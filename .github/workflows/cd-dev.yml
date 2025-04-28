@@ -57,8 +57,11 @@ jobs:
       - name: Setup SSH Key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
+          # Ensure the SSH key is in the correct format
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" | grep -q "^ssh-rsa " || echo "ssh-rsa ${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" | grep -q "^ssh-rsa " && echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
           chmod 600 ~/.ssh/id_rsa.pub
+
           # Check if terraform.tfvars exists and update it, or create it if it doesn't exist
           if [ -f terraform.tfvars ]; then
             sed -i 's|ssh_public_key_path = ".*"|ssh_public_key_path = "~/.ssh/id_rsa.pub"|' terraform.tfvars
