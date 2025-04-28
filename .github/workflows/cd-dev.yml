@@ -92,17 +92,13 @@ jobs:
           echo "=== Terraform Outputs ==="
           terraform output
 
-          # Store the terraform output in a variable for inspection
-          TERRAFORM_OUTPUT=$(terraform output)
-          echo "Terraform output captured: $TERRAFORM_OUTPUT"
-
-          # Extract IP using grep from the terraform output
-          EC2_IP=$(echo "$TERRAFORM_OUTPUT" | grep "ec2_instance_public_ip" | cut -d "=" -f2 | xargs)
+          # Extract just the IP address using a more specific grep pattern
+          EC2_IP=$(terraform output | grep 'ec2_instance_public_ip =' | sed 's/.*= "\([0-9\.]*\)".*/\1/')
           echo "Extracted EC2 IP: $EC2_IP"
 
-          # Fail the build if IP is not found or empty
-          if [ -z "$EC2_IP" ]; then
-            echo "Error: Failed to extract EC2 IP address"
+          # Verify that we have a valid IP format
+          if [[ ! $EC2_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Extracted value is not a valid IP address: '$EC2_IP'"
             echo "Available outputs:"
             terraform output
             exit 1
