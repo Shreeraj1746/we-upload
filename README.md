@@ -111,45 +111,6 @@ The integration tests:
 - Run tests against the API endpoints
 - Clean up after completion
 
-#### How the Integration Tests Work
-
-The integration tests utilize a custom pytest fixture called `docker_compose_up_down` located in `tests/conftest.py`. This fixture:
-
-1. Starts all Docker Compose services defined in your `docker-compose.yml` file
-2. Automatically detects whether to use the modern `docker compose` or legacy `docker-compose` command
-3. Waits for the API service to become available with health checks
-4. Yields control to the test functions to execute against the running services
-5. Automatically tears down all services after tests complete, even if tests fail
-
-This ensures a consistent and isolated environment for each test run, making the tests reliable and repeatable.
-
-### CI/CD Pipeline
-
-Tests run automatically on every push to the repository via GitHub Actions:
-1. **Linting**: Code style and quality checks using ruff and pre-commit hooks
-2. **Unit Tests**: Core functionality tests
-3. **API Integration Tests**: End-to-end tests of the API functionality
-4. **Build**: Docker image build (on main branch only)
-5. **Deployment**: Automatic deployment to the dev environment (on main branch only)
-
-#### CD Workflow
-
-The Continuous Deployment workflow (`cd-dev.yml`) automatically deploys the application to the dev environment when the CI workflow passes on the main branch. The workflow:
-
-1. **Infrastructure Management**: Uses Terraform to manage infrastructure for the dev environment
-2. **Deployment Automation**: Deploys the latest code to the EC2 instance using SSH
-3. **Database Migrations**: Applies any necessary database migrations
-4. **Status Updates**: Updates the status.md file with deployment information
-
-**Note**: The CD workflow deploys **only** to the dev environment, never to production.
-
-Required GitHub Actions secrets for CD:
-- `AWS_ACCESS_KEY_ID`: AWS access key with permissions to manage resources
-- `AWS_SECRET_ACCESS_KEY`: AWS secret key for authentication
-- `DB_PASSWORD`: Database password for the RDS instance
-- `SSH_PUBLIC_KEY`: SSH public key for EC2 instance access
-- `SSH_PRIVATE_KEY`: SSH private key for GitHub Actions to access the EC2 instance
-
 ## Manual Testing
 
 ### Setting Up the Local Environment
@@ -174,32 +135,6 @@ The database tables need to be created on first run:
 # Execute a command in the API container to initialize the database
 docker exec -it we-upload-api-1 python -c "from app.db.base import Base; from app.db.session import engine; Base.metadata.create_all(bind=engine)"
 ```
-
-### Current Status and Known Issues
-
-The application has been fixed and is now working properly. The previous issues have been resolved:
-
-1. **Database Relationship Issue**: Fixed the circular dependency between User and File models by:
-   - Moving relationship definitions to a separate module
-   - Setting up relationships after both models are fully defined
-   - Using proper UUID generation for model IDs
-
-2. **Authentication Working**: User creation and authentication now work correctly:
-   - Database tables are created automatically on startup
-   - Initial superuser is created automatically
-   - Login endpoint returns valid JWT tokens
-
-3. **MinIO S3 Integration**: Fixed the integration with local MinIO for file storage:
-   - Added proper endpoint URL configuration in the S3 client
-   - Set path-style addressing for MinIO compatibility
-   - Implemented debug mode detection for local development
-   - Fixed hostname resolution for presigned URLs (replacing 'minio:9000' with 'localhost:9000')
-
-4. **UUID Type Handling**: Fixed database type mismatches between UUID and string types:
-   - Ensured consistent type conversion before database operations
-   - Added support for both UUID and string ID parameters
-   - Fixed the "operator does not exist: character varying = uuid" error when listing files
-   - Fixed file download functionality that was affected by the same issue
 
 ### Testing API Endpoints
 
@@ -227,10 +162,10 @@ Now you can test the complete application functionality:
    # Copy the full token value from the response and set it as an environment variable:
    TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
-   # Alternatively, you can extract the token automatically (requires jq):
-   # TOKEN=$(curl -s -X 'POST' 'http://localhost:8000/login/access-token' \
-   #   -H 'Content-Type: application/x-www-form-urlencoded' \
-   #   -d 'username=admin%40example.com&password=admin' | jq -r '.access_token')
+   # Alternatively, extract the token automatically (requires jq):
+   TOKEN=$(curl -s -X 'POST' 'http://localhost:8000/login/access-token' \
+     -H 'Content-Type: application/x-www-form-urlencoded' \
+     -d 'username=admin%40example.com&password=admin' | jq -r '.access_token')
 
    # Verify the token is set correctly:
    echo $TOKEN
@@ -308,7 +243,7 @@ Now you can test the complete application functionality:
    cat downloaded_file.txt
    ```
 
-### Troubleshooting
+### Local Troubleshooting
 
 If you encounter issues with file upload or download:
 
@@ -342,8 +277,6 @@ If you encounter issues with file upload or download:
    echo "Fixed URL: $FIXED_URL"
    ```
 
-For more detailed troubleshooting information, see the `docs/status.md` file.
-
 ### Cleanup
 
 ```bash
@@ -358,64 +291,7 @@ docker-compose down -v
 
 This project uses Terraform to provision infrastructure on AWS and GitHub Actions for CI/CD. See the `docs/implementation_plan.md` for detailed instructions on each phase of deployment.
 
-## Following the Implementation Plan
-
-The project includes a comprehensive implementation plan in `docs/implementation_plan.md` that breaks down the development process into four phases:
-
-1. **Phase 1: Local Development**
-   - Set up the FastAPI application structure
-   - Implement database models and integrations
-   - Create file upload/download endpoints
-   - Configure Docker for local development
-
-2. **Phase 2: AWS & Terraform Setup**
-   - Configure AWS account and IAM permissions
-   - Build core infrastructure with Terraform
-   - Set up database and compute resources
-   - Integrate S3 for file storage
-
-3. **Phase 3: CI/CD with GitHub Actions**
-   - Implement automated testing
-   - Create CI workflows for code quality
-   - Set up deployment automation
-
-4. **Phase 4: Monitoring & Observability**
-   - Configure CloudWatch logging and metrics
-   - Implement health checks and alerting
-   - Optimize performance within Free Tier limits
-
-Each phase builds upon the previous one, allowing you to incrementally develop and test the application. The implementation plan includes learning objectives for each step to help you understand the architectural decisions and technologies used.
-
-## Learning Terraform with Checkpoint Branch
-
-If you're starting your journey to learn Terraform, you can use the `checkpoint_2025_04_19` branch as a starting point:
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/we-upload.git
-cd we-upload
-
-# Switch to the checkpoint branch
-git checkout checkpoint_2025_04_19
-
-# Start the local development environment
-docker-compose up -d
-```
-
-This branch has the local setup working correctly, with all Phase 1 tasks completed. You should be able to run all commands in the "Testing API Endpoints" section above.
-
-From here, you can follow [Phase 2 of the implementation plan](docs/implementation_plan.md#phase-2-aws--terraform-setup) to learn and implement infrastructure as code with Terraform. This provides a hands-on approach to learning AWS resource provisioning while building on a functional application.
-
-## AWS Free Tier Utilization
-
-This project is carefully designed to operate within AWS Free Tier limits:
-
-- **EC2**: t2.micro instance for hosting the application
-- **RDS**: db.t3.micro PostgreSQL instance with minimal storage
-- **S3**: Standard storage staying below the free tier threshold
-- **ALB**: Minimal configuration with optimization for cost
-
-## Testing AWS Deployment
+## AWS Deployment and Testing
 
 After deploying the application to AWS using Terraform, you can test the file upload and download functionality using the following steps:
 
@@ -493,8 +369,8 @@ rds_endpoint = "we-upload-db.cr6k82agk5wq.ap-south-1.rds.amazonaws.com:5432"
 
    # Extract the upload URL and file ID
    # If you have jq installed:
-   # UPLOAD_URL=$(echo $UPLOAD_RESPONSE | jq -r '.upload_url')
-   # FILE_ID=$(echo $UPLOAD_RESPONSE | jq -r '.file_id')
+   UPLOAD_URL=$(echo $UPLOAD_RESPONSE | jq -r '.upload_url')
+   FILE_ID=$(echo $UPLOAD_RESPONSE | jq -r '.file_id')
 
    # If you don't have jq, use these grep commands instead:
    UPLOAD_URL=$(echo $UPLOAD_RESPONSE | grep -o '"upload_url":"[^"]*"' | cut -d'"' -f4)
@@ -527,7 +403,7 @@ rds_endpoint = "we-upload-db.cr6k82agk5wq.ap-south-1.rds.amazonaws.com:5432"
 
    # Extract the download URL
    # If you have jq installed:
-   # DOWNLOAD_URL=$(echo "$DOWNLOAD_RESPONSE" | jq -r '.download_url')
+   DOWNLOAD_URL=$(echo "$DOWNLOAD_RESPONSE" | jq -r '.download_url')
 
    # If you don't have jq, use this grep command instead:
    DOWNLOAD_URL=$(echo "$DOWNLOAD_RESPONSE" | grep -o '"download_url":"[^"]*"' | cut -d'"' -f4)
@@ -566,31 +442,6 @@ If you encounter issues with file upload or download in AWS:
    If you encounter "502 Bad Gateway" errors from nginx after the initialization period, it might be due to:
    - **Database Connection Issues**: The default config had a hardcoded connection to "db" hostname, which works for local Docker Compose but not for EC2. We now install PostgreSQL locally on the EC2 instance.
    - **Circular Reference in Config**: There was a circular reference in settings initialization. We've fixed this by using default values directly.
-
-   To manually fix these issues:
-
-   ```bash
-   # SSH into your EC2 instance
-   ssh -i ~/.ssh/id_rsa ubuntu@<EC2_IP>
-
-   # Fix database connection in config.py
-   sudo sed -i 's|return "postgresql://postgres:postgres@db:5432/we_upload"|return f"postgresql://{user}:{password}@localhost:{port}/{db}"|' /app/app/core/config.py
-   sudo sed -i 's/POSTGRES_SERVER: str = "db"/POSTGRES_SERVER: str = "localhost"/' /app/app/core/config.py
-
-   # Install and configure PostgreSQL
-   sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib
-   sudo -u postgres psql -c "CREATE DATABASE weupload;"
-   sudo -u postgres psql -c "CREATE USER weuploadadmin WITH PASSWORD 'Password123!';"
-   sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE weupload TO weuploadadmin;"
-
-   # Update environment variables
-   echo "WE_UPLOAD_POSTGRES_SERVER=localhost" | sudo tee -a /app/.env
-   echo "WE_UPLOAD_POSTGRES_USER=weuploadadmin" | sudo tee -a /app/.env
-   echo "WE_UPLOAD_POSTGRES_PASSWORD=Password123!" | sudo tee -a /app/.env
-
-   # Restart the application
-   sudo systemctl restart weupload
-   ```
 
 3. **Check EC2 Initialization**:
 
@@ -632,254 +483,37 @@ If you encounter issues with file upload or download in AWS:
    sudo systemctl restart weupload
    ```
 
-5. **Upload a File**:
+## Learning Terraform with Checkpoint Branch
 
-   ```bash
-   # First, create a sample test file
-   echo "This is a test file for AWS deployment" > aws_test.txt
+If you're starting your journey to learn Terraform, you can use the `checkpoint_2025_04_19` branch as a starting point:
 
-   # Get a presigned URL for uploading
-   # (replace <EC2_IP> with your EC2 instance's public IP)
-   UPLOAD_RESPONSE=$(curl -s -X 'POST' "http://<EC2_IP>/api/v1/files/upload" \
-     -H "Authorization: Bearer $TOKEN" \
-     -H 'Content-Type: application/json' \
-     -d '{
-       "filename": "aws_test.txt",
-       "content_type": "text/plain",
-       "size_bytes": 42,
-       "description": "Test file for AWS deployment",
-       "is_public": true
-     }')
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/we-upload.git
+cd we-upload
 
-   # Extract the upload URL and file ID
-   # If you have jq installed:
-   # UPLOAD_URL=$(echo $UPLOAD_RESPONSE | jq -r '.upload_url')
-   # FILE_ID=$(echo $UPLOAD_RESPONSE | jq -r '.file_id')
+# Switch to the checkpoint branch
+git checkout checkpoint_2025_04_19
 
-   # If you don't have jq, use these grep commands instead:
-   UPLOAD_URL=$(echo $UPLOAD_RESPONSE | grep -o '"upload_url":"[^"]*"' | cut -d'"' -f4)
-   FILE_ID=$(echo $UPLOAD_RESPONSE | grep -o '"file_id":"[^"]*"' | cut -d'"' -f4)
+# Start the local development environment
+docker-compose up -d
+```
 
-   echo "Upload URL: $UPLOAD_URL"
-   echo "File ID: $FILE_ID"
+This branch has the local setup working correctly, with all Phase 1 tasks completed. You should be able to run all commands in the "Testing API Endpoints" section above.
 
-   # Upload the file using the presigned URL
-   curl -X 'PUT' "$UPLOAD_URL" \
-     -H 'Content-Type: text/plain' \
-     --data-binary @aws_test.txt
-   ```
+From here, you can follow [Phase 2 of the implementation plan](docs/implementation_plan.md#phase-2-aws--terraform-setup) to learn and implement infrastructure as code with Terraform. This provides a hands-on approach to learning AWS resource provisioning while building on a functional application.
 
-   Note: If the upload fails with an error about signature version or region, apply the fixes from the Troubleshooting section.
+## AWS Free Tier Utilization
 
-6. **List Files**:
+This project is carefully designed to operate within AWS Free Tier limits:
 
-   ```bash
-   # Get a list of all files
-   curl -X 'GET' "http://<EC2_IP>/api/v1/files" \
-     -H "Authorization: Bearer $TOKEN"
-   ```
+- **EC2**: t2.micro instance for hosting the application
+- **RDS**: db.t3.micro PostgreSQL instance with minimal storage
+- **S3**: Standard storage staying below the free tier threshold
+- **API Gateway**: Limited to 1 million requests per month
+- **CloudWatch**: Basic monitoring only
 
-7. **Download a File**:
-
-   ```bash
-   # Get a presigned URL for downloading
-   # Use the FILE_ID from the upload step
-   DOWNLOAD_RESPONSE=$(curl -s -X 'GET' "http://<EC2_IP>/api/v1/files/download/$FILE_ID" \
-     -H "Authorization: Bearer $TOKEN")
-
-   # Extract the download URL
-   # If you have jq installed:
-   # DOWNLOAD_URL=$(echo "$DOWNLOAD_RESPONSE" | jq -r '.download_url')
-
-   # If you don't have jq, use this grep command instead:
-   DOWNLOAD_URL=$(echo "$DOWNLOAD_RESPONSE" | grep -o '"download_url":"[^"]*"' | cut -d'"' -f4)
-
-   echo "Download URL: $DOWNLOAD_URL"
-
-   # Download the file
-   curl -X 'GET' "$DOWNLOAD_URL" -o downloaded_aws_file.txt
-
-   # Verify the downloaded file
-   cat downloaded_aws_file.txt
-   ```
-
-8. **Verify File Data**:
-
-   ```bash
-   # Verify the file metadata
-   curl -X 'GET' "http://<EC2_IP>/api/v1/files/$FILE_ID" \
-     -H "Authorization: Bearer $TOKEN"
-   ```
-
-### Troubleshooting AWS Deployment
-
-If you encounter issues with file upload or download in AWS:
-
-1. **Application Initialization Issues**:
-
-   ```bash
-   # If you get 502 Bad Gateway errors, the application may still be initializing.
-   # Wait 5-10 minutes after deployment, then try again.
-
-   # To check the status of the application directly:
-   ssh -i ~/.ssh/id_rsa ubuntu@<EC2_IP>
-
-   # Once logged in, check Docker container status:
-   cd /app
-   sudo docker-compose ps
-
-   # Check application logs:
-   sudo docker-compose logs api
-   ```
-
-2. **502 Bad Gateway Errors**:
-   If you encounter "502 Bad Gateway" errors from nginx after the initialization period, it might be due to:
-   - **Database Connection Issues**: The default config had a hardcoded connection to "db" hostname, which works for local Docker Compose but not for EC2. We now install PostgreSQL locally on the EC2 instance.
-   - **Circular Reference in Config**: There was a circular reference in settings initialization. We've fixed this by using default values directly.
-
-   To manually fix these issues:
-
-   ```bash
-   # SSH into your EC2 instance
-   ssh -i ~/.ssh/id_rsa ubuntu@<EC2_IP>
-
-   # Fix database connection in config.py
-   sudo sed -i 's|return "postgresql://postgres:postgres@db:5432/we_upload"|return f"postgresql://{user}:{password}@localhost:{port}/{db}"|' /app/app/core/config.py
-   sudo sed -i 's/POSTGRES_SERVER: str = "db"/POSTGRES_SERVER: str = "localhost"/' /app/app/core/config.py
-
-   # Install and configure PostgreSQL
-   sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib
-   sudo -u postgres psql -c "CREATE DATABASE weupload;"
-   sudo -u postgres psql -c "CREATE USER weuploadadmin WITH PASSWORD 'Password123!';"
-   sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE weupload TO weuploadadmin;"
-
-   # Update environment variables
-   echo "WE_UPLOAD_POSTGRES_SERVER=localhost" | sudo tee -a /app/.env
-   echo "WE_UPLOAD_POSTGRES_USER=weuploadadmin" | sudo tee -a /app/.env
-   echo "WE_UPLOAD_POSTGRES_PASSWORD=Password123!" | sudo tee -a /app/.env
-
-   # Restart the application
-   sudo systemctl restart weupload
-   ```
-
-3. **Check EC2 Initialization**:
-
-   ```bash
-   # SSH into the EC2 instance
-   ssh -i ~/.ssh/id_rsa ubuntu@<EC2_IP>
-
-   # Check the cloud-init log to see if initialization completed:
-   sudo cat /var/log/cloud-init-output.log
-   ```
-
-4. **S3 Region and Credentials Issues**:
-   If you encounter S3 upload/download errors like "Error parsing the X-Amz-Credential parameter" or "NoSuchBucket", it might be due to:
-   - **S3 Region Mismatch**: The application might be configured with a different region than where your S3 bucket is located.
-   - **MinIO Credentials Used in AWS**: The default configuration uses MinIO credentials which don't work in AWS.
-   - **S3 Bucket Name Mismatch**: The application might be configured with the wrong S3 bucket name.
-
-   To fix these issues:
-
-   ```bash
-   # SSH into your EC2 instance
-   ssh -i ~/.ssh/id_rsa ubuntu@<EC2_IP>
-
-   # Check and update AWS region to match the bucket region (usually ap-south-1)
-   grep WE_UPLOAD_AWS_REGION /app/.env
-   sudo sed -i 's/WE_UPLOAD_AWS_REGION=wrong-region/WE_UPLOAD_AWS_REGION=ap-south-1/g' /app/.env
-
-   # Remove explicit AWS credentials to use EC2 instance role instead
-   sudo sed -i '/WE_UPLOAD_AWS_ACCESS_KEY_ID=/d' /app/.env
-   sudo sed -i '/WE_UPLOAD_AWS_SECRET_ACCESS_KEY=/d' /app/.env
-
-   # Update S3 bucket name if needed (check the Terraform output for actual name)
-   sudo sed -i 's/WE_UPLOAD_S3_BUCKET_NAME=wrong-bucket-name/WE_UPLOAD_S3_BUCKET_NAME=correct-bucket-name/g' /app/.env
-
-   # Modify the S3 client configuration to use the instance role
-   sudo python3 -c "f=open('/app/app/services/file_service.py', 'r'); content=f.read(); f.close(); content=content.replace('        else:\\n            # Production AWS\\n            self.s3_client = boto3.client(\\n                \\\"s3\\\",\\n                region_name=settings.AWS_REGION,\\n                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,\\n                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,\\n            )', '        else:\\n            # Production AWS\\n            self.s3_client = boto3.client(\\n                \\\"s3\\\",\\n                region_name=settings.AWS_REGION,\\n                config=boto3.session.Config(signature_version=\\\"s3v4\\\"),\\n            )'); f=open('/app/app/services/file_service.py', 'w'); f.write(content); f.close(); print('File updated with signature_version parameter')"
-
-   # Restart the application
-   sudo systemctl restart weupload
-   ```
-
-5. **Upload a File**:
-
-   ```bash
-   # First, create a sample test file
-   echo "This is a test file for AWS deployment" > aws_test.txt
-
-   # Get a presigned URL for uploading
-   # (replace <EC2_IP> with your EC2 instance's public IP)
-   UPLOAD_RESPONSE=$(curl -s -X 'POST' "http://<EC2_IP>/api/v1/files/upload" \
-     -H "Authorization: Bearer $TOKEN" \
-     -H 'Content-Type: application/json' \
-     -d '{
-       "filename": "aws_test.txt",
-       "content_type": "text/plain",
-       "size_bytes": 42,
-       "description": "Test file for AWS deployment",
-       "is_public": true
-     }')
-
-   # Extract the upload URL and file ID
-   # If you have jq installed:
-   # UPLOAD_URL=$(echo $UPLOAD_RESPONSE | jq -r '.upload_url')
-   # FILE_ID=$(echo $UPLOAD_RESPONSE | jq -r '.file_id')
-
-   # If you don't have jq, use these grep commands instead:
-   UPLOAD_URL=$(echo $UPLOAD_RESPONSE | grep -o '"upload_url":"[^"]*"' | cut -d'"' -f4)
-   FILE_ID=$(echo $UPLOAD_RESPONSE | grep -o '"file_id":"[^"]*"' | cut -d'"' -f4)
-
-   echo "Upload URL: $UPLOAD_URL"
-   echo "File ID: $FILE_ID"
-
-   # Upload the file using the presigned URL
-   curl -X 'PUT' "$UPLOAD_URL" \
-     -H 'Content-Type: text/plain' \
-     --data-binary @aws_test.txt
-   ```
-
-   Note: If the upload fails with an error about signature version or region, apply the fixes from the Troubleshooting section.
-
-6. **List Files**:
-
-   ```bash
-   # Get a list of all files
-   curl -X 'GET' "http://<EC2_IP>/api/v1/files" \
-     -H "Authorization: Bearer $TOKEN"
-   ```
-
-7. **Download a File**:
-
-   ```bash
-   # Get a presigned URL for downloading
-   # Use the FILE_ID from the upload step
-   DOWNLOAD_RESPONSE=$(curl -s -X 'GET' "http://<EC2_IP>/api/v1/files/download/$FILE_ID" \
-     -H "Authorization: Bearer $TOKEN")
-
-   # Extract the download URL
-   # If you have jq installed:
-   # DOWNLOAD_URL=$(echo "$DOWNLOAD_RESPONSE" | jq -r '.download_url')
-
-   # If you don't have jq, use this grep command instead:
-   DOWNLOAD_URL=$(echo "$DOWNLOAD_RESPONSE" | grep -o '"download_url":"[^"]*"' | cut -d'"' -f4)
-
-   echo "Download URL: $DOWNLOAD_URL"
-
-   # Download the file
-   curl -X 'GET' "$DOWNLOAD_URL" -o downloaded_aws_file.txt
-
-   # Verify the downloaded file
-   cat downloaded_aws_file.txt
-   ```
-
-8. **Verify File Data**:
-
-   ```bash
-   # Verify the file metadata
-   curl -X 'GET' "http://<EC2_IP>/api/v1/files/$FILE_ID" \
-     -H "Authorization: Bearer $TOKEN"
-   ```
+For detailed information about AWS deployment, see the [terraform README](terraform/README.md).
 
 ## License
 

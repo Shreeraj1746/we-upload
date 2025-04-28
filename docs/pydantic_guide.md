@@ -2,7 +2,7 @@
 
 ## Introduction to Pydantic
 
-[Pydantic](https://docs.pydantic.dev/) is a data validation and settings management library using Python type annotations. In the We-Upload project, Pydantic plays a critical role in:
+[Pydantic](https://docs.pydantic.dev/) is a data validation and settings management library using Python type annotations. This project uses **Pydantic v2**, the latest version with improved performance and features. In the We-Upload project, Pydantic plays a critical role in:
 
 1. **Data Validation**: Ensuring incoming data meets specific requirements
 2. **Request/Response Modeling**: Defining the structure of API inputs and outputs
@@ -80,24 +80,28 @@ return file_schema  # Return to client
 Our project uses a consistent schema hierarchy pattern:
 
 ```
-                           ┌─────────┐
-                           │ BaseModel│
-                           └─────────┘
-                                 │
-                                 ▼
-                          ┌────────────┐
-                          │ EntityBase │ (common attributes)
-                          └────────────┘
-                        /        │        \
-                       /         │         \
-         ┌────────────┐  ┌─────────────┐  ┌────────────────┐
-         │ EntityCreate│  │EntityUpdate │  │ EntityInDBBase │
-         └────────────┘  └─────────────┘  └────────────────┘
-                                                    │
-                                                    ▼
-                                             ┌────────────┐
-                                             │   Entity   │ (API response)
-                                             └────────────┘
+┌──────────────────────────────────────────┐
+│              BaseModel (Pydantic)        │
+└──────────────────────────────────────────┘
+                      │
+                      ▼
+┌──────────────────────────────────────────┐
+│  EntityBase (common attributes for all)  │
+└──────────────────────────────────────────┘
+           ┌───────────┼───────────┐
+           │           │           │
+           ▼           ▼           ▼
+┌────────────────┐ ┌──────────────┐ ┌────────────────┐
+│  EntityCreate  │ │ EntityUpdate │ │ EntityInDBBase │
+│  (creation     │ │ (partial     │ │ (DB fields     │
+│   inputs)      │ │  updates)    │ │  + base fields)│
+└────────────────┘ └──────────────┘ └────────────────┘
+                                           │
+                                           ▼
+                                    ┌────────────────┐
+                                    │     Entity     │
+                                    │ (API response) │
+                                    └────────────────┘
 ```
 
 ## Without Pydantic vs. With Pydantic
@@ -225,7 +229,7 @@ class FileBase(BaseModel):
     filename: str
     content_type: str
     size_bytes: int
-    description: str | None = None
+    description: Optional[str] = None
     is_public: bool = False
 
 # Creation schema
@@ -236,9 +240,9 @@ class FileCreate(FileBase):
 # Update schema with optional fields
 class FileUpdate(BaseModel):
     """Schema for updating a file."""
-    filename: str | None = None
-    description: str | None = None
-    is_public: bool | None = None
+    filename: Optional[str] = None
+    description: Optional[str] = None
+    is_public: Optional[bool] = None
 
 # Database schema with additional fields
 class FileInDBBase(FileBase):
@@ -288,7 +292,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
-    SQLALCHEMY_DATABASE_URI: str | None = None
+    SQLALCHEMY_DATABASE_URI: Optional[str] = None
 
     # AWS settings
     AWS_REGION: str = "ap-south-1"
@@ -298,7 +302,7 @@ class Settings(BaseSettings):
     PRESIGNED_URL_EXPIRATION: int = 3600  # 1 hour
 
     # CORS settings
-    BACKEND_CORS_ORIGINS: list[AnyHttpUrl] = []
+    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
 
     # Debug mode
     DEBUG: bool = False
@@ -369,7 +373,7 @@ class Token(BaseModel):
 
 ## Additional Resources
 
-- [Official Pydantic Documentation](https://docs.pydantic.dev/)
+- [Official Pydantic v2 Documentation](https://docs.pydantic.dev/latest/)
 - [Pydantic v2 Migration Guide](https://docs.pydantic.dev/latest/migration/)
 - [FastAPI with Pydantic](https://fastapi.tiangolo.com/tutorial/body/#pydantic-models)
 - [SQLAlchemy with Pydantic](https://docs.pydantic.dev/latest/usage/models/#helper-functions)

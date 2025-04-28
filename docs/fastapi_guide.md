@@ -2,7 +2,7 @@
 
 ## Introduction
 
-[FastAPI](https://fastapi.tiangolo.com/) is a modern, high-performance web framework for building APIs with Python 3.7+ based on standard Python type hints. In the We-Upload project, FastAPI serves as the backbone for our backend API, providing a robust foundation for building a multi-user file upload and sharing platform.
+[FastAPI](https://fastapi.tiangolo.com/) is a modern, high-performance web framework for building APIs with Python 3.8+ based on standard Python type hints. In the We-Upload project, FastAPI serves as the backbone for our backend API, providing a robust foundation for building a multi-user file upload and sharing platform.
 
 This guide explains how FastAPI is implemented in the We-Upload project and how its key components work together.
 
@@ -28,6 +28,25 @@ app/
 ├── schemas/          # Pydantic models for validation and serialization
 ├── services/         # Business logic layer
 └── main.py           # Application entry point
+```
+
+## Component Relationships
+
+The following diagram shows how the main components interact:
+
+```
+┌───────────┐     ┌───────────┐     ┌───────────┐
+│  Routers  │────▶│  Services │────▶│ SQLAlchemy│
+│ (API      │     │ (Business │     │  Models   │
+│  Endpoints)│◀────│  Logic)   │◀────│ (Database)│
+└───────────┘     └───────────┘     └───────────┘
+      │                 │                 │
+      │                 │                 │
+      ▼                 ▼                 ▼
+┌───────────────────────────────────────────┐
+│             Pydantic Schemas              │
+│  (Request/Response Validation & Formats)  │
+└───────────────────────────────────────────┘
 ```
 
 ## 1. Models
@@ -94,7 +113,7 @@ class FileBase(BaseModel):
     filename: str
     content_type: str
     size_bytes: int
-    description: str | None = None
+    description: Optional[str] = None  # Using typing.Optional
     is_public: bool = False
 
 # Schema for creating a new file
@@ -103,9 +122,9 @@ class FileCreate(FileBase):
 
 # Schema for updating a file (all optional)
 class FileUpdate(BaseModel):
-    filename: str | None = None
-    description: str | None = None
-    is_public: bool | None = None
+    filename: Optional[str] = None
+    description: Optional[str] = None
+    is_public: Optional[bool] = None
 
 # Schema for file stored in database
 class FileInDBBase(FileBase):
@@ -173,13 +192,13 @@ def create_upload_url(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate upload URL: {e!s}")
 
-@router.get("", response_model=list[File])
+@router.get("", response_model=List[File])  # Using List from typing
 def list_files(
     skip: int = Query(0, ge=0, description="Number of files to skip"),
     limit: int = Query(100, ge=1, le=100, description="Maximum number of files to return"),
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_user),
-) -> list[File]:
+) -> List[File]:
     """List all files owned by the current user."""
     file_service = FileService(db)
     owner_id_str = str(current_user.id)
@@ -190,7 +209,69 @@ def list_files(
         raise HTTPException(status_code=500, detail=f"Failed to list files: {e}")
 ```
 
-## 4. API Endpoints
+## 4. Services
+
+The service layer contains the business logic of the application, separating it from the API endpoints:
+
+```python
+class FileService:
+    """Service for managing file operations."""
+
+    def __init__(self, db: Session):
+        self.db = db
+        # Initialize S3 client
+        if settings.DEBUG:
+            # Local development with MinIO
+            self.s3_client = boto3.client(
+                "s3",
+                endpoint_url="http://minio:9000",
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                config=boto3.session.Config(signature_version="s3v4"),
+            )
+        else:
+            # Production AWS
+            self.s3_client = boto3.client(
+                "s3",
+                region_name=settings.AWS_REGION,
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            )
+
+    def create_upload_url(self, file_info: FileCreate, user: UserModel) -> FileUploadResponse:
+        """Create a new file record and generate a presigned upload URL."""
+        # Generate a unique S3 key
+        s3_key = f"{user.id}/{uuid.uuid4()}/{file_info.filename}"
+
+        # Create file metadata record
+        file_in_db = FileModel(
+            filename=file_info.filename,
+            s3_key=s3_key,
+            content_type=file_info.content_type,
+            size_bytes=file_info.size_bytes,
+            description=file_info.description,
+            is_public=file_info.is_public,
+            owner_id=user.id,
+        )
+        self.db.add(file_in_db)
+        self.db.commit()
+        self.db.refresh(file_in_db)
+
+        # Generate presigned URL for upload
+        upload_url = self.s3_client.generate_presigned_url(
+            ClientMethod="put_object",
+            Params={
+                "Bucket": settings.S3_BUCKET_NAME,
+                "Key": s3_key,
+                "ContentType": file_info.content_type,
+            },
+            ExpiresIn=settings.PRESIGNED_URL_EXPIRATION,
+        )
+
+        return FileUploadResponse(upload_url=upload_url, file_id=file_in_db.id)
+```
+
+## 5. API Endpoints
 
 API endpoints are organized around resources:
 
