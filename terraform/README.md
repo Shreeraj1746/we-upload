@@ -23,8 +23,8 @@ terraform/
 │       ├── variables.tf   # Variables specific to prod
 │       ├── outputs.tf     # Outputs specific to prod
 │       └── terraform.tfvars # Variable values for prod
-├── deploy.sh              # Deployment script
-└── cleanup.sh             # Cleanup script
+├── state-managment/       # Resources for hosting remote state
+    ├── main.tf            # S3 and DynamoDB table for remote state
 ```
 
 ## Modules
@@ -221,7 +221,104 @@ Or manually:
 
 Each environment manages its own state file. For collaboration and backup, it's recommended to configure remote state storage:
 
-### Setting Up Remote State
+### Setting Up Remote State Using Terraform
+
+Instead of manually creating the remote state infrastructure, you can use Terraform itself to create the necessary resources:
+
+1. Navigate to the state-management directory:
+   ```
+   cd terraform/state-management
+   ```
+
+2. Initialize and apply the Terraform configuration:
+   ```
+   terraform init
+   terraform plan
+   terraform apply
+   ```
+
+3. When prompted, type "yes" to confirm the deployment.
+
+This will create:
+- An S3 bucket named `we-upload-terraform-state` with versioning and encryption enabled
+- A DynamoDB table named `we-upload-terraform-locks` for state locking
+
+### Migrating From Local to Remote State
+
+Follow these steps to migrate your existing local state to remote state:
+
+1. First, ensure your state-management infrastructure is deployed (see above).
+
+2. For each environment you want to migrate, navigate to its directory:
+   ```
+   cd terraform/environments/dev    # Replace 'dev' with the environment you're migrating
+   ```
+
+3. Add the backend configuration to the environment's `main.tf` file:
+   ```hcl
+   terraform {
+     backend "s3" {
+       bucket         = "we-upload-terraform-state"
+       key            = "environments/dev/terraform.tfstate"  # Replace 'dev' with your environment name
+       region         = "ap-south-1"
+       dynamodb_table = "we-upload-terraform-locks"
+       encrypt        = true
+     }
+   }
+   ```
+
+4. Initialize Terraform with the new backend configuration:
+   ```
+   terraform init
+   ```
+
+5. When prompted with:
+   ```
+   Do you want to copy existing state to the new backend?
+     Pre-existing state was found while migrating the previous "local" backend to the
+     newly configured "s3" backend. No existing state was found in the newly
+     configured "s3" backend. Do you want to copy this state to the new "s3"
+     backend? Enter "yes" to copy and "no" to start with an empty state.
+   ```
+
+   Type "yes" to migrate your local state to the remote backend.
+
+6. Verify that your state has been migrated successfully:
+   ```
+   terraform state list
+   ```
+
+7. Perform a simple terraform plan to ensure everything is working correctly:
+   ```
+   terraform plan
+   ```
+
+8. Repeat steps 2-7 for each environment you need to migrate.
+
+### Handling State Migration Issues
+
+If you encounter problems during migration:
+
+1. **State Already Exists**: If state already exists in the remote backend:
+   ```
+   terraform state pull > terraform.tfstate.backup
+   ```
+   Then manually inspect both states and decide which to keep.
+
+2. **Backend Initialization Fails**: If initialization fails:
+   ```
+   terraform init -reconfigure
+   ```
+   This forces Terraform to reconfigure the backend without attempting to migrate state.
+
+3. **Rollback to Local State**: To revert to local state if needed:
+   - Remove the backend configuration from your `main.tf`
+   - Run `terraform init -migrate-state`
+   - When prompted, migrate from S3 back to local
+
+### Setting Up Remote State (Manual Method)
+
+As an alternative to using Terraform to create the infrastructure, you can manually create the resources:
 
 1. Create an S3 bucket for storing Terraform state:
    ```
@@ -252,30 +349,43 @@ Each environment manages its own state file. For collaboration and backup, it's 
        --region ap-south-1
    ```
 
-4. Add the following to each environment's `main.tf` file:
-   ```hcl
-   terraform {
-     backend "s3" {
-       bucket         = "we-upload-terraform-state"
-       key            = "environments/<environment>/terraform.tfstate" # e.g., "environments/dev/terraform.tfstate"
-       region         = "ap-south-1"
-       dynamodb_table = "we-upload-terraform-locks"
-       encrypt        = true
-     }
-   }
+4. Block public access to the S3 bucket:
+   ```
+   aws s3api put-public-access-block \
+       --bucket we-upload-terraform-state \
+       --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
    ```
 
-5. Replace `<environment>` with the specific environment name (e.g., "dev", "prod").
-
-6. Initialize Terraform with the backend configuration:
-   ```
-   terraform init
-   ```
+5. Then continue with the migration steps from step 3 in the "Migrating From Local to Remote State" section above.
 
 This setup ensures:
 - State is securely stored in S3 with encryption
 - State locking to prevent concurrent modifications
 - Version history for the state files
+- No public access to your Terraform state
+- Multi-user collaboration capability
+
+### Working with Remote State
+
+Once your state is migrated to the remote backend:
+
+1. **Best Practices for Teams**:
+   - Always run `terraform plan` before applying changes
+   - Use Git to track your Terraform code
+   - Consider implementing a CI/CD pipeline for Terraform changes
+
+2. **Backing Up Remote State**:
+   The S3 bucket has versioning enabled, but you can also periodically download a backup:
+   ```
+   terraform state pull > terraform.tfstate.backup
+   ```
+
+3. **Removing an Environment from Remote State**:
+   If you need to completely remove an environment from remote state:
+   ```
+   aws s3 rm s3://we-upload-terraform-state/environments/environment-name/terraform.tfstate
+   ```
+   Replace 'environment-name' with the name of the environment to remove.
 
 ## Testing EC2 and RDS Resources
 
