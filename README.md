@@ -287,6 +287,50 @@ docker-compose down
 docker-compose down -v
 ```
 
+## CI/CD Pipelines
+
+This project uses GitHub Actions to automate testing, building, and deployment processes, streamlining development and ensuring code quality.
+
+### CI Pipeline (`ci.yml`)
+
+The continuous integration pipeline runs on every push and pull request to the main branch:
+
+1. **Code Quality Checks**
+   - **Linting**: Uses pre-commit hooks to run various linters including validating Terraform code
+   - **Terraform Validation**: Ensures Terraform configurations are correctly formatted and valid
+
+2. **Automated Testing**
+   - **Unit Tests**: Runs pytest against the application code with PostgreSQL service container
+   - **API Integration Tests**: Executes end-to-end tests using Docker Compose to simulate the complete environment
+   - **Test Coverage**: Generates coverage reports with pytest-cov
+
+3. **Build Verification**
+   - **Docker Image Building**: Builds but doesn't push the application Docker image when changes are merged to main
+   - **Build Caching**: Utilizes GitHub Actions cache to speed up subsequent builds
+
+### CD Pipeline (`cd-dev.yml`)
+
+The continuous deployment pipeline is triggered automatically after a successful CI run on the main branch:
+
+1. **Infrastructure Management**
+   - **Terraform Setup**: Configures the S3 backend for state storage
+   - **Terraform Plan & Apply**: Provisions or updates AWS infrastructure with proper variable handling
+
+2. **Deployment Process**
+   - **SSH Deployment**: Connects to the EC2 instance via SSH after infrastructure is provisioned
+   - **Code Update**: Pulls the latest code from the repository
+   - **Database Migrations**: Applies any pending Alembic migrations to update the database schema
+   - **Service Restart**: Restarts the application service to apply changes
+
+This workflow ensures that infrastructure changes and application updates are applied consistently and automatically upon merging to the main branch.
+
+### Workflow Structure
+
+The GitHub Actions workflow files are located in the `.github/workflows/` directory:
+
+- `ci.yml`: Handles linting, testing, and Docker image building
+- `cd-dev.yml`: Manages infrastructure provisioning and application deployment to the dev environment
+
 ## Deployment
 
 This project uses Terraform to provision infrastructure on AWS and GitHub Actions for CI/CD. See the `docs/implementation_plan.md` for detailed instructions on each phase of deployment.
