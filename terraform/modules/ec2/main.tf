@@ -166,6 +166,75 @@ resource "aws_instance" "api_server" {
               rm -f /etc/nginx/sites-enabled/default
               systemctl restart nginx
 
+              # Create logs directory
+              mkdir -p /app/logs
+              touch /app/logs/app.log
+              chown -R ubuntu:ubuntu /app/logs
+
+              # Install CloudWatch Agent
+              wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+              dpkg -i ./amazon-cloudwatch-agent.deb
+              rm ./amazon-cloudwatch-agent.deb
+
+              # Create CloudWatch Agent config
+              cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json << EOL
+              {
+                "agent": {
+                  "metrics_collection_interval": 60,
+                  "run_as_user": "cwagent"
+                },
+                "metrics": {
+                  "append_dimensions": {
+                    "InstanceId": "$${aws:InstanceId}"
+                  },
+                  "metrics_collected": {
+                    "mem": {
+                      "measurement": [
+                        "mem_used_percent"
+                      ]
+                    },
+                    "disk": {
+                      "measurement": [
+                        "disk_used_percent"
+                      ],
+                      "resources": [
+                        "/"
+                      ]
+                    }
+                  }
+                },
+                "logs": {
+                  "logs_collected": {
+                    "files": {
+                      "collect_list": [
+                        {
+                          "file_path": "/app/logs/app.log",
+                          "log_group_name": "/aws/ec2/${var.project_name}",
+                          "log_stream_name": "{instance_id}/app.log",
+                          "timezone": "UTC"
+                        },
+                        {
+                          "file_path": "/var/log/syslog",
+                          "log_group_name": "/aws/ec2/${var.project_name}",
+                          "log_stream_name": "{instance_id}/syslog",
+                          "timezone": "UTC"
+                        },
+                        {
+                          "file_path": "/var/log/user-data.log",
+                          "log_group_name": "/aws/ec2/${var.project_name}",
+                          "log_stream_name": "{instance_id}/user-data.log",
+                          "timezone": "UTC"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+              EOL
+
+              # Start the CloudWatch Agent
+              /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+
               echo "EC2 initialization complete"
               EOF
 

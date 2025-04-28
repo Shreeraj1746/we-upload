@@ -483,6 +483,78 @@ If you encounter issues with file upload or download in AWS:
    sudo systemctl restart weupload
    ```
 
+## Monitoring with CloudWatch
+
+The application uses AWS CloudWatch for comprehensive monitoring and observability, providing insight into performance, health, and usage patterns.
+
+### CloudWatch Features
+
+1. **Structured JSON Logging**
+   - All application logs are formatted as JSON for easy parsing and analysis in CloudWatch Logs
+   - Log retention is configured for 7 days (AWS Free Tier friendly)
+   - Log groups are automatically created during deployment
+
+2. **System Metrics Monitoring**
+   - CPU utilization from the EC2 instance
+   - Memory usage (custom metric via CloudWatch agent)
+   - Disk utilization (custom metric via CloudWatch agent)
+
+3. **Automated Alerting**
+   - CPU utilization alarm (triggers when CPU > 80% for 10 minutes)
+   - Memory usage alarm (triggers when memory > 80% for 10 minutes)
+   - Disk usage alarm (triggers when disk space > 85% for 10 minutes)
+
+### Viewing Logs and Metrics
+
+1. **Using AWS Console**
+   - Navigate to CloudWatch > Log groups > /aws/ec2/we-upload
+   - Select the log stream for your instance to view logs
+   - Navigate to CloudWatch > Metrics > All metrics > CWAgent for custom metrics
+
+2. **Using AWS CLI**
+   ```bash
+   # View the most recent logs
+   aws logs get-log-events \
+     --log-group-name "/aws/ec2/we-upload" \
+     --log-stream-name "<INSTANCE_ID>/app.log" \
+     --limit 10
+
+   # Check CPU metrics for the last hour
+   aws cloudwatch get-metric-statistics \
+     --namespace "AWS/EC2" \
+     --metric-name "CPUUtilization" \
+     --dimensions Name=InstanceId,Value=<INSTANCE_ID> \
+     --start-time $(date -u -v-1H +"%Y-%m-%dT%H:%M:%SZ") \
+     --end-time $(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+     --period 300 \
+     --statistics Average
+   ```
+
+### Testing CloudWatch Integration
+
+For detailed steps on testing the CloudWatch integration, refer to `docs/cloudwatch_testing_plan.md`. This document includes:
+
+- Procedures for verifying log delivery
+- Methods to test metric collection
+- Steps to validate alarm functionality
+- Ways to check log retention policies
+- Instructions for creating and using CloudWatch dashboards
+
+### Extending Monitoring Capabilities
+
+While staying within AWS Free Tier, you can:
+
+1. **Create custom metrics** for application-specific measurements
+2. **Set up composite alarms** that trigger based on multiple conditions
+3. **Configure dashboard widgets** to visualize important metrics
+4. **Use CloudWatch Insights** for advanced log analysis
+
+For production environments beyond Free Tier, consider:
+- Longer log retention periods
+- Integration with SNS for alarm notifications
+- Setting up X-Ray for distributed tracing
+- Implementing enhanced metric collection at 1-minute intervals
+
 ## Learning Terraform with Checkpoint Branch
 
 If you're starting your journey to learn Terraform, you can use the `checkpoint_2025_04_19` branch as a starting point:
