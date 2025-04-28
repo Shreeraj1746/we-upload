@@ -45,7 +45,17 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
           chmod 600 ~/.ssh/id_rsa.pub
-          sed -i 's|ssh_public_key_path = ".*"|ssh_public_key_path = "~/.ssh/id_rsa.pub"|' terraform.tfvars
+
+          # Check if terraform.tfvars exists
+          if [ -f terraform.tfvars ]; then
+            sed -i 's|ssh_public_key_path = ".*"|ssh_public_key_path = "~/.ssh/id_rsa.pub"|' terraform.tfvars
+          else
+            # Create terraform.tfvars if it doesn't exist
+            echo 'aws_region   = "ap-south-1"' > terraform.tfvars
+            echo 'project_name = "we-upload"' >> terraform.tfvars
+            echo 'environment  = "dev"' >> terraform.tfvars
+            echo 'ssh_public_key_path = "~/.ssh/id_rsa.pub"' >> terraform.tfvars
+          fi
 
       - name: Terraform Plan
         run: terraform plan -out=tfplan.out
