@@ -95,20 +95,6 @@ jobs:
           # Try to get the IP using terraform output, but capture just the first line
           EC2_IP=$(terraform output -raw ec2_instance_public_ip 2>/dev/null | head -n 1 || echo "")
 
-          # If that fails, try the JSON approach with error handling
-          if [ -z "$EC2_IP" ]; then
-            echo "Trying JSON output method..."
-            # Capture the JSON output and check if it's valid
-            JSON_OUTPUT=$(terraform output -json 2>/dev/null || echo "{}")
-            echo "Raw JSON output: $JSON_OUTPUT"
-
-            # Try to extract IP from JSON with error handling
-            EC2_IP=$(echo "$JSON_OUTPUT" | jq -r '.ec2_instance_public_ip.value // empty' || echo "")
-          fi
-
-          # Clean the output - remove any debug information that might be appended
-          EC2_IP=$(echo "$EC2_IP" | sed 's/::debug::.*//' | tr -d '\n' | xargs)
-
           echo "Found EC2 IP: $EC2_IP"
 
           # Fail the build if IP is not found or empty
@@ -148,10 +134,3 @@ jobs:
             "
             sudo systemctl restart weupload
             echo "Deployment completed successfully"
-
-      - name: Update Status
-        run: |
-          cd ../../..
-          echo "## Latest Deployment" >> status.md
-          echo "- ✅ Deployed to DEV environment on $(date)" >> status.md
-          echo "- 🌐 Application URL: http://${{ steps.get-ec2-ip.outputs.ec2_ip }}" >> status.md
