@@ -1,4 +1,4 @@
-.PHONY: init init-terragrunt plan-dev apply-dev plan-prod apply-prod plan-all apply-all clean terraform-docs
+.PHONY: init init-terragrunt plan-dev apply-dev plan-prod apply-prod plan-all apply-all clean terraform-docs test integration-test
 
 # Common variables
 TF_STATE_BUCKET ?= we-upload-terraform-state
@@ -49,6 +49,16 @@ clean:
 	@echo "Cleaning Terragrunt cache..."
 	@find . -name ".terragrunt-cache" -type d -exec rm -rf {} +
 
+# Run unit tests
+test:
+	@echo "Running unit tests..."
+	@python -m pytest tests/ --ignore=tests/test_e2e_upload_download.py --ignore=tests/test_basic_file_api.py
+
+# Run integration tests
+integration-test:
+	@echo "Running integration tests..."
+	@python -m pytest tests/test_basic_file_api.py tests/test_api_integration.py -v
+
 # Help
 help:
 	@echo "Available targets:"
@@ -61,6 +71,8 @@ help:
 	@echo "  apply-all       - Apply changes to all environments"
 	@echo "  terraform-docs  - Generate Terraform documentation"
 	@echo "  clean           - Clean Terragrunt cache"
+	@echo "  test            - Run unit tests"
+	@echo "  integration-test - Run integration tests with Docker Compose"
 	@echo "  help            - Show this help message"
 	@echo ""
 	@echo "Environment variables:"

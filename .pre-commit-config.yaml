@@ -45,3 +45,21 @@ repos:
         pass_filenames: false
         files: ^terraform/.*\.(tf|tfvars)$
         exclude: ^terraform/.*/\.terraform/.*$
+
+      - id: unit-tests
+        name: Run unit tests
+        description: Run Python unit tests on code changes
+        entry: scripts/run_tests.sh
+        language: script
+        pass_filenames: false
+        types: [python]
+        stages: [push]
+
+      - id: integration-tests
+        name: Run integration tests
+        description: Run API integration tests in Docker Compose environment
+        entry: scripts/run_integration_tests.sh
+        language: script
+        pass_filenames: false
+        types: [python]
+        stages: [push]
