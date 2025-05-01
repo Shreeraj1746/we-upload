@@ -111,6 +111,33 @@ The integration tests:
 - Run tests against the API endpoints
 - Clean up after completion
 
+### Pre-commit Hooks
+
+The project uses pre-commit hooks to ensure code quality and run tests before code is pushed to the repository:
+
+```bash
+# Install pre-commit hooks
+pre-commit install
+pre-commit install --hook-type pre-push
+
+# Run manually (not just unit tests but also linting)
+pre-commit run --all-files
+
+# Test pre-push hooks (unit and integration tests)
+./scripts/test_pre_push_hooks.sh
+```
+
+Pre-commit hooks run:
+- On commit: Code formatting and linting hooks
+- On push: Unit tests and integration tests
+
+To skip pre-push hooks in an emergency (not recommended):
+```bash
+git push --no-verify
+```
+
+Our CI/CD pipeline runs all tests regardless of whether they were skipped locally.
+
 ## Manual Testing
 
 ### Setting Up the Local Environment

@@ -52,8 +52,10 @@ repos:
         entry: scripts/run_tests.sh
         language: script
         pass_filenames: false
+        always_run: true
+        verbose: true
         types: [python]
-        stages: [push]
+        stages: [pre-push]
 
       - id: integration-tests
         name: Run integration tests
@@ -61,5 +63,7 @@ repos:
         entry: scripts/run_integration_tests.sh
         language: script
         pass_filenames: false
+        always_run: true
+        verbose: true
         types: [python]
-        stages: [push]
+        stages: [pre-push]
