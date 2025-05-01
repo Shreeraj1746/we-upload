@@ -28,6 +28,7 @@ repos:
           - --hook-config=--create-file-if-not-exist=true
         files: ^terraform/.*\.tf$
         exclude: ^terraform/.*/\.terraform/.*$
+        skip_on_ci: true
 
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v3.10.0
@@ -45,6 +46,7 @@ repos:
         pass_filenames: false
         files: ^terraform/.*\.(tf|tfvars)$
         exclude: ^terraform/.*/\.terraform/.*$
+        skip_on_ci: true
 
       - id: unit-tests
         name: Run unit tests

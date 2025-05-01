@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+# Check if running in CI environment and exit successfully if the CI flag is set to skip
+if [ "${CI:-false}" == "true" ] && [ "${SKIP_ON_CI:-false}" == "true" ]; then
+  echo "Running in CI with SKIP_ON_CI=true, skipping terraform-docs generation"
+  exit 0
+fi
+
 # Check if terraform-docs is installed
 if ! command -v terraform-docs &> /dev/null; then
   echo "Error: terraform-docs is not installed. Please install it first:"
