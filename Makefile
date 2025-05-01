@@ -1,4 +1,4 @@
-.PHONY: init init-terragrunt plan-dev apply-dev plan-prod apply-prod plan-all apply-all clean
+.PHONY: init init-terragrunt plan-dev apply-dev plan-prod apply-prod plan-all apply-all clean terraform-docs
 
 # Common variables
 TF_STATE_BUCKET ?= we-upload-terraform-state
@@ -39,6 +39,11 @@ apply-all:
 	@echo "Applying all environments..."
 	@cd terragrunt && terragrunt run-all apply
 
+# Generate Terraform documentation
+terraform-docs:
+	@echo "Generating Terraform documentation..."
+	@./scripts/generate_terraform_docs.sh
+
 # Clean the Terraform cache
 clean:
 	@echo "Cleaning Terragrunt cache..."
@@ -54,6 +59,7 @@ help:
 	@echo "  apply-prod      - Apply changes to production environment"
 	@echo "  plan-all        - Plan changes for all environments"
 	@echo "  apply-all       - Apply changes to all environments"
+	@echo "  terraform-docs  - Generate Terraform documentation"
 	@echo "  clean           - Clean Terragrunt cache"
 	@echo "  help            - Show this help message"
 	@echo ""

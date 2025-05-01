@@ -14,9 +14,10 @@
 - ✅ Add end-to-end test for file upload/download functionality
 - ✅ Configure CI/CD to run e2e tests on each push
 - ✅ Create CD workflow for automated deployment to DEV environment
+- ✅ Set up terraform-docs to automatically generate infrastructure documentation
 
 ## Current Status
-The application is now fully functional in both local and AWS environments. File uploads and downloads are working correctly with AWS S3. All major functionality is working as expected. The S3 integration has been enhanced to prevent region and credential issues in future deployments. API integration tests have been added to verify the API endpoints functionality, and the CI/CD pipeline has been updated to run these tests on each push. The test infrastructure has been fixed to properly manage Docker Compose for integration testing. A continuous deployment workflow has been added to automatically deploy to the DEV environment when CI passes on the main branch.
+The application is now fully functional in both local and AWS environments. File uploads and downloads are working correctly with AWS S3. All major functionality is working as expected. The S3 integration has been enhanced to prevent region and credential issues in future deployments. API integration tests have been added to verify the API endpoints functionality, and the CI/CD pipeline has been updated to run these tests on each push. The test infrastructure has been fixed to properly manage Docker Compose for integration testing. A continuous deployment workflow has been added to automatically deploy to the DEV environment when CI passes on the main branch. Additionally, terraform-docs has been integrated to automatically generate infrastructure documentation for better maintainability.
 
 ## S3 Integration Fix Details
 Fixed the following S3 integration issues in the AWS environment:
@@ -44,8 +45,17 @@ Added comprehensive testing:
 6. Fixed the pytest fixture for Docker Compose management, ensuring proper environment setup/teardown for tests
 7. Consolidated redundant Docker Compose fixtures into a single, more robust implementation
 
+## Terraform Documentation Improvements
+Added terraform-docs integration:
+1. Created a `.terraform-docs.yml` configuration file with best practice settings
+2. Created a custom script at `scripts/generate_terraform_docs.sh` to generate documentation
+3. Added pre-commit hooks to automatically generate docs when Terraform files change
+4. Added a Makefile target to manually generate Terraform documentation
+5. Configured documentation generation for all Terraform modules and the main configuration
+
 ## Next Steps
 - ✅ Create CI/CD pipeline for automated deployments
+- ✅ Set up terraform-docs for infrastructure documentation
 - Implement additional file format validations
 - Add user profile management
 - Create a frontend interface
@@ -66,6 +76,7 @@ Added comprehensive testing:
   - Core Infrastructure with Terraform
   - Database and Compute Resources
   - S3 Integration in FastAPI
+  - Terraform Documentation Setup
 
 - **Phase 3: CI/CD with GitHub Actions** - All tasks completed
   - Setting Up Testing
@@ -93,6 +104,7 @@ Added comprehensive testing:
 - Created alarms for CPU, memory, and disk usage
 - Added detailed testing plan for CloudWatch integration
 - CloudWatch Agent configured to collect system metrics
+- Terraform documentation setup to maintain infrastructure-as-code best practices
 
 ## Next Steps
 1. Implement health check endpoints in the API for external monitoring

@@ -22,9 +22,26 @@ repos:
       - id: terraform_fmt
       - id: terraform_validate
       - id: terraform_docs
+        args:
+          - --hook-config=--path-to-file=README.md
+          - --hook-config=--add-to-existing-file=true
+          - --hook-config=--create-file-if-not-exist=true
+        files: ^terraform/.*\.tf$
+        exclude: ^terraform/.*/\.terraform/.*$
 
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v3.10.0
     hooks:
       - id: commitizen
         stages: [commit-msg]
+
+  - repo: local
+    hooks:
+      - id: terraform-docs-script
+        name: Run terraform-docs script
+        description: Generate documentation for Terraform files using custom script
+        entry: scripts/generate_terraform_docs.sh
+        language: script
+        pass_filenames: false
+        files: ^terraform/.*\.(tf|tfvars)$
+        exclude: ^terraform/.*/\.terraform/.*$

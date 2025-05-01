@@ -280,3 +280,29 @@ If you encounter issues:
 4. **EC2 SSH access problems**
    - Verify key pair is correctly specified
    - Check security group rules for SSH access (port 22)
+
+<!-- BEGIN_TF_DOCS -->
+## Requirements
+
+No requirements.
+
+## Providers
+
+No providers.
+
+## Modules
+
+No modules.
+
+## Resources
+
+No resources.
+
+## Inputs
+
+No inputs.
+
+## Outputs
+
+No outputs.
+<!-- END_TF_DOCS -->
