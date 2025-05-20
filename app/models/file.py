@@ -37,7 +37,9 @@ class File(Base):
         owner: The user who owns the file.
     """
 
-    id = Column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    id = Column(
+        String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4())
+    )
     filename = Column(String(255), nullable=False)
     s3_key = Column(String(255), nullable=False, unique=True)
     content_type = Column(String(100), nullable=False)
@@ -46,7 +48,13 @@ class File(Base):
     is_public = Column(Boolean, default=False, nullable=False)
     owner_id = Column(String(36), ForeignKey("user.id"), nullable=False)
     created_at = Column(DateTime, default=func.now(), nullable=False)
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime, default=func.now(), onupdate=func.now(), nullable=False
+    )
 
-    # Define attributes that will be populated by relationship later
+    # Define attributes that will be populated by SQLAlchemy relationships later.
+    # These attributes are not actual database columns, but are set up using SQLAlchemy's
+    # relationship() function in other parts of the codebase (typically in the User model).
+    # When SQLAlchemy loads a File instance, it can automatically populate these attributes
+    # with related objects (such as the owner User) based on foreign key relationships.
     owner = None

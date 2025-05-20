@@ -1,4 +1,16 @@
-"""User router with CRUD endpoints."""
+"""
+User router with CRUD endpoints.
+
+This module defines the user-related API endpoints for the application.
+
+Endpoints:
+    POST /users/ : Create a new user. Only accessible by superusers.
+
+Details:
+    - The root path ("") for the router means the endpoint will be mounted at the base path specified when including this router in the main application.
+    - The create_user endpoint allows superusers to create new users, ensuring no duplicate emails exist.
+    - Raises HTTP 400 if a user with the provided email already exists.
+"""
 
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query
@@ -151,7 +163,9 @@ def read_user_by_id(
     if user == current_user:
         return user
     if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Only superusers can access other users")
+        raise HTTPException(
+            status_code=403, detail="Only superusers can access other users"
+        )
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
