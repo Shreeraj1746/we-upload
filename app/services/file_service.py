@@ -10,7 +10,12 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.file import File as FileModel
 from app.models.user import User as UserModel
-from app.schemas.file import FileCreate, FileDownloadResponse, FileUpdate, FileUploadResponse
+from app.schemas.file import (
+    FileCreate,
+    FileDownloadResponse,
+    FileUpdate,
+    FileUploadResponse,
+)
 
 
 class FileService:
@@ -161,7 +166,9 @@ class FileService:
         self.db.refresh(db_obj)
         return db_obj
 
-    def update(self, db_obj: FileModel, obj_in: FileUpdate | dict[str, Any]) -> FileModel:
+    def update(
+        self, db_obj: FileModel, obj_in: FileUpdate | dict[str, Any]
+    ) -> FileModel:
         """Update a file's metadata.
 
         Args:
@@ -221,7 +228,9 @@ class FileService:
         self.db.commit()
         return file_obj
 
-    def create_upload_url(self, file_info: FileCreate, user: UserModel) -> FileUploadResponse:
+    def create_upload_url(
+        self, file_info: FileCreate, user: UserModel
+    ) -> FileUploadResponse:
         """Create a presigned URL for file upload and register the file metadata.
 
         Args:
@@ -268,7 +277,9 @@ class FileService:
             self.db.commit()
             raise Exception(f"Error generating presigned URL: {e}")
 
-    def create_download_url(self, file_id: uuid.UUID, user: UserModel) -> FileDownloadResponse:
+    def create_download_url(
+        self, file_id: uuid.UUID, user: UserModel
+    ) -> FileDownloadResponse:
         """Create a presigned URL for file download.
 
         Args:
@@ -289,7 +300,11 @@ class FileService:
             raise FileNotFoundError(f"File with ID {file_id} not found")
 
         # Check permissions
-        if not file_obj.is_public and file_obj.owner_id != user.id and not user.is_superuser:
+        if (
+            not file_obj.is_public
+            and file_obj.owner_id != user.id
+            and not user.is_superuser
+        ):
             raise PermissionError("Not enough permissions to access this file")
 
         # Generate presigned URL for download

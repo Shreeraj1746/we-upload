@@ -8,7 +8,13 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User as UserModel
-from app.schemas.file import File, FileCreate, FileDownloadResponse, FileUpdate, FileUploadResponse
+from app.schemas.file import (
+    File,
+    FileCreate,
+    FileDownloadResponse,
+    FileUpdate,
+    FileUploadResponse,
+)
 from app.services.file_service import FileService
 
 router = APIRouter()
@@ -40,7 +46,9 @@ def create_upload_url(
     try:
         return file_service.create_upload_url(file_info=file_info, user=current_user)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate upload URL: {e!s}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to generate upload URL: {e!s}"
+        )
 
 
 @router.get("/download/{file_id}", response_model=FileDownloadResponse)
@@ -71,15 +79,21 @@ def create_download_url(
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="File not found")
     except PermissionError:
-        raise HTTPException(status_code=403, detail="Not enough permissions to access this file")
+        raise HTTPException(
+            status_code=403, detail="Not enough permissions to access this file"
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate download URL: {e!s}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to generate download URL: {e!s}"
+        )
 
 
 @router.get("", response_model=list[File])
 def list_files(
     skip: int = Query(0, ge=0, description="Number of files to skip"),
-    limit: int = Query(100, ge=1, le=100, description="Maximum number of files to return"),
+    limit: int = Query(
+        100, ge=1, le=100, description="Maximum number of files to return"
+    ),
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_user),
 ) -> list[File]:
@@ -98,7 +112,9 @@ def list_files(
     # Convert UUID to string to match database column type
     owner_id_str = str(current_user.id)
     try:
-        files = file_service.get_multi_by_owner(owner_id=owner_id_str, skip=skip, limit=limit)
+        files = file_service.get_multi_by_owner(
+            owner_id=owner_id_str, skip=skip, limit=limit
+        )
         return [File.model_validate(file) for file in files]
     except Exception as e:
         # Add error logging
@@ -129,8 +145,14 @@ def get_file(
     file = file_service.get(id=file_id)
     if not file:
         raise HTTPException(status_code=404, detail="File not found")
-    if not file.is_public and file.owner_id != current_user.id and not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Not enough permissions to access this file")
+    if (
+        not file.is_public
+        and file.owner_id != current_user.id
+        and not current_user.is_superuser
+    ):
+        raise HTTPException(
+            status_code=403, detail="Not enough permissions to access this file"
+        )
     return File.model_validate(file)
 
 
@@ -160,7 +182,9 @@ def update_file(
     if not file:
         raise HTTPException(status_code=404, detail="File not found")
     if file.owner_id != current_user.id and not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Not enough permissions to modify this file")
+        raise HTTPException(
+            status_code=403, detail="Not enough permissions to modify this file"
+        )
 
     file = file_service.update(db_obj=file, obj_in=file_in)
     return File.model_validate(file)
@@ -192,7 +216,9 @@ def delete_file(
     if not file:
         raise HTTPException(status_code=404, detail="File not found")
     if file.owner_id != current_user.id and not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Not enough permissions to delete this file")
+        raise HTTPException(
+            status_code=403, detail="Not enough permissions to delete this file"
+        )
 
     try:
         file = file_service.remove(id=file_id)
