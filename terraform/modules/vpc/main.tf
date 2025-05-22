@@ -95,6 +95,10 @@ resource "aws_nat_gateway" "nat" {
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
+  # Creates a dynamic "route" block for the route table if a NAT Gateway is to be created.
+  # When var.create_nat_gateway is true, a default route (0.0.0.0/0) is added,
+  # directing outbound traffic through the first NAT Gateway (aws_nat_gateway.nat[0].id).
+  # If var.create_nat_gateway is false, no route is created.
   dynamic "route" {
     for_each = var.create_nat_gateway ? [1] : []
     content {

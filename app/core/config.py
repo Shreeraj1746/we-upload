@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     prefixed with 'WE_UPLOAD_'.
     """
 
+    # Configure Pydantic settings to load environment variables from a .env file,
+    # using the "WE_UPLOAD_" prefix to avoid conflicts and group related variables.
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", env_prefix="WE_UPLOAD_"
     )
@@ -29,7 +31,9 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "Password123!"
     POSTGRES_DB: str = "weupload"
     POSTGRES_PORT: str = "5432"
-    SQLALCHEMY_DATABASE_URI: str = "postgresql://weuploadadmin:Password123!@localhost:5432/weupload"
+    SQLALCHEMY_DATABASE_URI: str = (
+        "postgresql://weuploadadmin:Password123!@localhost:5432/weupload"
+    )
 
     # JWT settings
     SECRET_KEY: str = "supersecretkey"  # Default value for development

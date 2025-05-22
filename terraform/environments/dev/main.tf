@@ -14,7 +14,6 @@ terraform {
     key     = "environments/dev/terraform.tfstate" # Replace 'dev' with your environment name
     region  = "ap-south-1"
     encrypt = true
-    # Temporarily removing DynamoDB locking to fix state issues
     # dynamodb_table = "we-upload-terraform-locks"
   }
 }
